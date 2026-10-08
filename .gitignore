@@ -1,0 +1,33 @@
+# Dependencias y builds
+node_modules/
+dist/
+
+# Entorno y secretos
+.env
+.env.*
+!.env.example
+
+# Android (Capacitor) — la carpeta android/ SÍ se sube, sus builds no
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/
+android/app/src/main/assets/public/
+android/local.properties
+android/.idea/
+*.iml
+*.apk
+*.aab
+
+# Claves de firma: nunca al repo
+*.keystore
+*.jks
+keystore.properties
+
+# Sistema / editores
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.log
