@@ -85,3 +85,12 @@ src/
 - Botón atrás de Android con `@capacitor/app` en lugar del `popstate` actual.
 - Estadísticas: más usados, coste por uso, acordes que más te gustan.
 - Sincronización entre dispositivos (Supabase o Firebase).
+
+## Licencia
+
+Copyright (C) 2026 Alberto Ropero
+
+Este proyecto es software libre bajo la [GNU GPL v3.0 o posterior](LICENSE).
+Puedes usarlo, estudiarlo, modificarlo y redistribuirlo, pero cualquier versión
+modificada que distribuyas (incluida una app publicada) tiene que publicar su
+código fuente bajo esta misma licencia y conservar el aviso de autoría.
