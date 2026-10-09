@@ -4,22 +4,29 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { SHAPES, DEFAULT_SHAPE } from '../lib/constants.js';
 import { buildBottle, buildBottleGeometry, shadowTexture } from '../lib/bottle3d.js';
+import { fitModel, loadModel } from '../lib/model3d.js';
 import { Icon } from './ui.jsx';
 
 export default function Bottle3D({ perfume, onShapeChange, onClose, onOpenDetail }) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const [bottle, setBottle] = useState(null);
+  const [model, setModel] = useState(null);
+  const [missing, setMissing] = useState(false); // tiene modelo importado pero no está en este móvil
   const [error, setError] = useState(false);
   const shape = perfume.shape || DEFAULT_SHAPE;
 
-  // Analiza las fotos una vez (sin foto, el frasco se pinta con el nombre y los acordes)
+  // Modelo importado o, si no hay, frasco hecho con las fotos (sin foto, pintado con el nombre y los acordes)
   useEffect(() => {
     let alive = true;
-    setBottle(null);
-    buildBottle(perfume).then((b) => alive && setBottle(b)).catch(() => alive && setError(true));
+    setBottle(null); setModel(null); setMissing(false); setError(false);
+    const photos = () => buildBottle(perfume).then((b) => alive && setBottle(b));
+    const job = perfume.modelKey
+      ? loadModel(perfume.modelKey).then((m) => alive && setModel(m)).catch(() => { if (alive) setMissing(true); return photos(); })
+      : photos();
+    job.catch(() => alive && setError(true));
     return () => { alive = false; };
-  }, [perfume.image, perfume.backImage, perfume.name, perfume.brand, perfume.accords.join()]);
+  }, [perfume.modelKey, perfume.image, perfume.backImage, perfume.name, perfume.brand, perfume.accords.join()]);
 
   // Escena
   useEffect(() => {
@@ -105,6 +112,18 @@ export default function Bottle3D({ perfume, onShapeChange, onClose, onOpenDetail
 
   useEffect(() => () => bottle?.texture.dispose(), [bottle]);
 
+  // Modelo importado: se comparte con la estantería, así que solo se quita de la escena
+  useEffect(() => {
+    if (!model || !sceneRef.current) return;
+    const { scene, shadow } = sceneRef.current;
+    const obj = fitModel(model, 2);
+    obj.position.y = -1;
+    scene.add(obj);
+    const size = obj.userData.size;
+    shadow.scale.set(size.x * 1.6, size.z * 1.6 + 0.3, 1);
+    return () => { scene.remove(obj); };
+  }, [model]);
+
   return (
     <div className="viewer3d">
       <header className="topbar">
@@ -113,20 +132,23 @@ export default function Bottle3D({ perfume, onShapeChange, onClose, onOpenDetail
         {onOpenDetail ? <button className="link" onClick={onOpenDetail}>Ficha</button> : <span />}
       </header>
       <div className="viewer3d__stage" ref={mountRef}>
-        {!bottle && !error && <p className="viewer3d__msg muted">Creando modelo…</p>}
+        {!bottle && !model && !error && <p className="viewer3d__msg muted">Creando modelo…</p>}
         {error && <p className="viewer3d__msg">No se pudo leer la foto.</p>}
       </div>
       <div className="viewer3d__bar">
-        <div className="segmented segmented--small">
-          {Object.entries(SHAPES).map(([k, s]) => (
-            <button key={k} className={shape === k ? 'on' : ''} onClick={() => onShapeChange(k)}>{s.label}</button>
-          ))}
-        </div>
+        {!model && (
+          <div className="segmented segmented--small">
+            {Object.entries(SHAPES).map(([k, s]) => (
+              <button key={k} className={shape === k ? 'on' : ''} onClick={() => onShapeChange(k)}>{s.label}</button>
+            ))}
+          </div>
+        )}
         <p className="muted small">
           Arrastra para girar, pellizca para acercar.
+          {missing && ' El modelo 3D importado no está en este móvil (no viaja en las copias de seguridad): vuelve a importarlo en Editar.'}
           {bottle?.profile.fallback && ' No distinguí bien el frasco del fondo: prueba con una foto de frente sobre un fondo liso.'}
-          {!perfume.image && ' Es un frasco genérico: añade una foto en Editar para ver el tuyo.'}
-          {perfume.image && !perfume.backImage && ' Añade una foto de detrás en Editar para que la espalda sea real.'}
+          {bottle && !perfume.image && ' Es un frasco genérico: añade una foto o importa un modelo 3D en Editar para ver el tuyo.'}
+          {bottle && perfume.image && !perfume.backImage && ' Añade una foto de detrás en Editar para que la espalda sea real.'}
         </p>
       </div>
     </div>

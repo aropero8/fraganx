@@ -1,8 +1,10 @@
-import { lazy, Suspense, useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { accordColor, cap, STATUSES } from '../lib/constants.js';
 import { SAMPLES } from '../lib/samples.js';
+import { shelfStyle } from '../lib/shelfStyles.js';
 import { AccordBar, Icon, Stars, Thumb } from './ui.jsx';
+import ShelfCustomizer from './ShelfCustomizer.jsx';
 
 // three.js pesa: solo se descarga al ver la estantería o abrir un frasco
 const Shelf3D = lazy(() => import('./Shelf3D.jsx'));
@@ -46,6 +48,14 @@ export default function Collection({ openPerfume, newPerfume }) {
   const [sort, setSort] = useState('recent');
   const [layout, setLayout] = useState(readLayout);
   const [viewing, setViewing] = useState(null); // id del frasco abierto en 3D
+  const [customizing, setCustomizing] = useState(false);
+  const shelfRef = useRef(null);
+
+  // Sube la estantería arriba para verla entera mientras se elige en el panel
+  const openCustomizer = () => {
+    setCustomizing(true);
+    requestAnimationFrame(() => shelfRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
+  };
 
   const counts = useMemo(
     () => Object.fromEntries(Object.keys(STATUSES).map((s) => [s, perfumes.filter((p) => p.status === s).length])),
@@ -74,7 +84,7 @@ export default function Collection({ openPerfume, newPerfume }) {
   const viewed = viewing && perfumes.find((p) => p.id === viewing);
 
   return (
-    <div className="screen">
+    <div className={`screen ${customizing ? 'screen--sheet' : ''}`}>
       <header className="screen__head row row--between">
         <h1>Colección</h1>
         {inTab.length > 0 && (
@@ -139,9 +149,14 @@ export default function Collection({ openPerfume, newPerfume }) {
           <button className="link" onClick={() => { setQ(''); setAccord(null); }}>Quitar filtros</button>
         </div>
       ) : layout === 'shelf' ? (
-        <Suspense fallback={<div className="shelf shelf--loading muted small">Montando la estantería…</div>}>
-          <Shelf3D perfumes={list} onPick={(p) => setViewing(p.id)} />
-        </Suspense>
+        <div ref={shelfRef}>
+          <Suspense fallback={<div className="shelf shelf--loading muted small">Montando la estantería…</div>}>
+            <Shelf3D perfumes={list} style={store.shelves?.[tab]} onPick={(p) => setViewing(p.id)} />
+          </Suspense>
+          <button className="shelf-customize" onClick={openCustomizer}>
+            <Icon name="palette" size={16} /> Personalizar estantería
+          </button>
+        </div>
       ) : layout === 'grid' ? (
         <ul className="pgrid">
           {list.map((p) => (
@@ -187,6 +202,16 @@ export default function Collection({ openPerfume, newPerfume }) {
       )}
 
       <button className="fab" onClick={() => newPerfume(tab)} aria-label="Añadir perfume"><Icon name="plus" size={26} /></button>
+
+      {customizing && (
+        <ShelfCustomizer
+          title={`Estantería de «${STATUSES[tab]}»`}
+          value={shelfStyle(store.shelves?.[tab])}
+          onChange={(v) => store.setShelf(tab, v)}
+          onApplyAll={store.setAllShelves}
+          onClose={() => setCustomizing(false)}
+        />
+      )}
 
       {viewed && (
         <Suspense fallback={<div className="viewer3d"><p className="viewer3d__msg muted">Cargando visor…</p></div>}>
