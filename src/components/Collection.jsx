@@ -1,8 +1,18 @@
-import { useMemo, useState } from 'react';
+import { lazy, Suspense, useMemo, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { accordColor, cap, STATUSES } from '../lib/constants.js';
 import { SAMPLES } from '../lib/samples.js';
 import { AccordBar, Icon, Stars, Thumb } from './ui.jsx';
+
+// three.js pesa: solo se descarga al ver la estantería o abrir un frasco
+const Shelf3D = lazy(() => import('./Shelf3D.jsx'));
+const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
+
+const LAYOUTS = [
+  { id: 'shelf', icon: 'shelf', label: 'Estantería' },
+  { id: 'grid', icon: 'grid', label: 'Cuadrícula' },
+  { id: 'list', icon: 'list', label: 'Lista' },
+];
 
 const SORTS = {
   recent: { label: 'Recientes', fn: (a, b) => b.createdAt.localeCompare(a.createdAt) },
@@ -17,9 +27,14 @@ const EMPTY = {
   tuve: 'Los que ya no tienes, para recordar qué te gustó y qué no.',
 };
 
-// Preferencia de vista: solo comodidad, si falla el almacenamiento usamos cuadrícula.
+// Preferencia de vista: solo comodidad, si falla el almacenamiento usamos la estantería.
 // (La clave mantiene el nombre antiguo del proyecto, como la de store.jsx.)
-const readLayout = () => { try { return localStorage.getItem('perfumario:layout') || 'grid'; } catch { return 'grid'; } };
+const readLayout = () => {
+  try {
+    const v = localStorage.getItem('perfumario:layout');
+    return LAYOUTS.some((l) => l.id === v) ? v : 'shelf';
+  } catch { return 'shelf'; }
+};
 const saveLayout = (v) => { try { localStorage.setItem('perfumario:layout', v); } catch { /* sin almacenamiento */ } };
 
 export default function Collection({ openPerfume, newPerfume }) {
@@ -30,6 +45,7 @@ export default function Collection({ openPerfume, newPerfume }) {
   const [accord, setAccord] = useState(null);
   const [sort, setSort] = useState('recent');
   const [layout, setLayout] = useState(readLayout);
+  const [viewing, setViewing] = useState(null); // id del frasco abierto en 3D
 
   const counts = useMemo(
     () => Object.fromEntries(Object.keys(STATUSES).map((s) => [s, perfumes.filter((p) => p.status === s).length])),
@@ -54,16 +70,22 @@ export default function Collection({ openPerfume, newPerfume }) {
   }, [inTab, q, accord, sort]);
 
   const changeTab = (k) => { setTab(k); setAccord(null); };
-  const toggleLayout = () => { const v = layout === 'grid' ? 'list' : 'grid'; setLayout(v); saveLayout(v); };
+  const changeLayout = (v) => { setLayout(v); saveLayout(v); };
+  const viewed = viewing && perfumes.find((p) => p.id === viewing);
 
   return (
     <div className="screen">
       <header className="screen__head row row--between">
         <h1>Colección</h1>
         {inTab.length > 0 && (
-          <button className="icon-btn" onClick={toggleLayout} aria-label={layout === 'grid' ? 'Ver como lista' : 'Ver como cuadrícula'}>
-            <Icon name={layout === 'grid' ? 'list' : 'grid'} />
-          </button>
+          <div className="layout-switch" role="group" aria-label="Vista">
+            {LAYOUTS.map((l) => (
+              <button key={l.id} className={layout === l.id ? 'on' : ''} onClick={() => changeLayout(l.id)}
+                aria-label={l.label} aria-pressed={layout === l.id}>
+                <Icon name={l.icon} size={18} />
+              </button>
+            ))}
+          </div>
         )}
       </header>
 
@@ -116,6 +138,10 @@ export default function Collection({ openPerfume, newPerfume }) {
           <p>Nada coincide con la búsqueda.</p>
           <button className="link" onClick={() => { setQ(''); setAccord(null); }}>Quitar filtros</button>
         </div>
+      ) : layout === 'shelf' ? (
+        <Suspense fallback={<div className="shelf shelf--loading muted small">Montando la estantería…</div>}>
+          <Shelf3D perfumes={list} onPick={(p) => setViewing(p.id)} />
+        </Suspense>
       ) : layout === 'grid' ? (
         <ul className="pgrid">
           {list.map((p) => (
@@ -161,6 +187,17 @@ export default function Collection({ openPerfume, newPerfume }) {
       )}
 
       <button className="fab" onClick={() => newPerfume(tab)} aria-label="Añadir perfume"><Icon name="plus" size={26} /></button>
+
+      {viewed && (
+        <Suspense fallback={<div className="viewer3d"><p className="viewer3d__msg muted">Cargando visor…</p></div>}>
+          <Bottle3D
+            perfume={viewed}
+            onShapeChange={(shape) => store.savePerfume({ ...viewed, shape })}
+            onClose={() => setViewing(null)}
+            onOpenDetail={() => openPerfume(viewed.id)}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

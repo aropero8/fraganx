@@ -79,11 +79,9 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         ) : (
           <span className="showcase__initial" style={{ color: accordGradient(p.accords).color }}>{(p.name.trim()[0] || '?').toUpperCase()}</span>
         )}
-        {p.image && (
-          <button className="showcase__3d" onClick={() => setShow3d(true)}>
-            <Icon name="cube" size={18} /> Ver en 3D
-          </button>
-        )}
+        <button className="showcase__3d" onClick={() => setShow3d(true)}>
+          <Icon name="cube" size={18} /> Ver en 3D
+        </button>
       </section>
 
       <section className="title-block">

@@ -3,36 +3,23 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { SHAPES, DEFAULT_SHAPE } from '../lib/constants.js';
-import { buildBottle, buildBottleGeometry } from '../lib/bottle3d.js';
+import { buildBottle, buildBottleGeometry, shadowTexture } from '../lib/bottle3d.js';
 import { Icon } from './ui.jsx';
 
-// Sombra suave bajo el frasco
-function shadowTexture() {
-  const c = document.createElement('canvas');
-  c.width = c.height = 128;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-  g.addColorStop(0, 'rgba(0,0,0,0.45)');
-  g.addColorStop(1, 'rgba(0,0,0,0)');
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, 128, 128);
-  return new THREE.CanvasTexture(c);
-}
-
-export default function Bottle3D({ perfume, onShapeChange, onClose }) {
+export default function Bottle3D({ perfume, onShapeChange, onClose, onOpenDetail }) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const [bottle, setBottle] = useState(null);
   const [error, setError] = useState(false);
   const shape = perfume.shape || DEFAULT_SHAPE;
 
-  // Analiza las fotos una vez
+  // Analiza las fotos una vez (sin foto, el frasco se pinta con el nombre y los acordes)
   useEffect(() => {
     let alive = true;
     setBottle(null);
     buildBottle(perfume).then((b) => alive && setBottle(b)).catch(() => alive && setError(true));
     return () => { alive = false; };
-  }, [perfume.image, perfume.backImage]);
+  }, [perfume.image, perfume.backImage, perfume.name, perfume.brand, perfume.accords.join()]);
 
   // Escena
   useEffect(() => {
@@ -123,7 +110,7 @@ export default function Bottle3D({ perfume, onShapeChange, onClose }) {
       <header className="topbar">
         <button className="link link--icon" onClick={onClose}><Icon name="back" size={20} /> Cerrar</button>
         <strong>{perfume.name}</strong>
-        <span />
+        {onOpenDetail ? <button className="link" onClick={onOpenDetail}>Ficha</button> : <span />}
       </header>
       <div className="viewer3d__stage" ref={mountRef}>
         {!bottle && !error && <p className="viewer3d__msg muted">Creando modelo…</p>}
@@ -138,7 +125,8 @@ export default function Bottle3D({ perfume, onShapeChange, onClose }) {
         <p className="muted small">
           Arrastra para girar, pellizca para acercar.
           {bottle?.profile.fallback && ' No distinguí bien el frasco del fondo: prueba con una foto de frente sobre un fondo liso.'}
-          {!perfume.backImage && ' Añade una foto de detrás en Editar para que la espalda sea real.'}
+          {!perfume.image && ' Es un frasco genérico: añade una foto en Editar para ver el tuyo.'}
+          {perfume.image && !perfume.backImage && ' Añade una foto de detrás en Editar para que la espalda sea real.'}
         </p>
       </div>
     </div>

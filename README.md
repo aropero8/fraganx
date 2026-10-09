@@ -59,6 +59,14 @@ Se genera en el propio móvil, sin internet ni servicios externos (`src/lib/bott
 
 Para que salga bien: foto **de frente**, frasco **entero** y fondo **liso** que contraste (una pared o un folio).
 Los frascos con formas muy irregulares (esculturas, tapones laterales) se aproximan, no se reconstruyen.
+Los perfumes sin foto tienen un frasco genérico con los colores de sus acordes y una etiqueta con su nombre.
+
+## Estantería
+
+En **Colección** la vista por defecto es una estantería 3D de madera (`src/components/Shelf3D.jsx`): una por cada
+pestaña (los tengo, los quiero, los tuve), con una balda por cada fila de frascos. Respeta la búsqueda, el orden y el
+filtro de acordes. Toca un frasco para abrirlo en el visor 3D; desde ahí, **Ficha** lleva a su ficha.
+Con el botón de arriba a la derecha cambias a cuadrícula o lista.
 
 ## Datos
 
@@ -93,7 +101,9 @@ src/
     samples.js            datos de ejemplo
   components/
     Today.jsx             tiempo + recomendaciones + valorar ayer
-    Collection.jsx        tengo / quiero / tuve
+    Collection.jsx        tengo / quiero / tuve (estantería, cuadrícula o lista)
+    Shelf3D.jsx           estantería 3D
+    Bottle3D.jsx          visor 3D de un frasco
     PerfumeDetail.jsx     ficha, comentarios, historial de uso
     PerfumeForm.jsx       alta y edición
     Settings.jsx          importar, exportar, ejemplos

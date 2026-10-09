@@ -414,6 +414,24 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
 .tabbar__icon { display: grid; place-items: center; width: 56px; height: 30px; border-radius: 999px; transition: background-color .2s; }
 .tabbar button.on .tabbar__icon { background: var(--accent-soft); }
 
+/* ---------- Estantería 3D ---------- */
+.layout-switch { display: flex; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 3px; }
+.layout-switch button {
+  display: grid; place-items: center; width: 34px; height: 30px; border: 0; border-radius: 9px;
+  background: none; color: var(--muted);
+}
+.layout-switch button.on { background: var(--surface-2); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
+.shelf { position: relative; margin-bottom: 96px; }
+.shelf--loading { display: grid; place-items: center; min-height: 180px; }
+.shelf__stage { touch-action: pan-y; }
+.shelf__stage canvas { display: block; }
+.shelf__label {
+  position: absolute; transform: translate(-50%, -50%); max-width: calc(var(--slot, 80px) * .92);
+  padding: 1px 6px; border: 0; border-radius: 4px; background: rgba(255, 246, 230, .92); color: #3a2618;
+  font-size: 10px; font-weight: 600; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+}
+
 /* ---------- Visor 3D ---------- */
 .viewer3d {
   position: fixed; inset: 0; z-index: 50; background: var(--bg);

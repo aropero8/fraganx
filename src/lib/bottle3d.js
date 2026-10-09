@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { SHAPES, DEFAULT_SHAPE } from './constants.js';
+import { accordColor, SHAPES, DEFAULT_SHAPE } from './constants.js';
 
 // Construye un frasco 3D a partir de la foto de frente (y opcionalmente la de detrás).
 // 1. Separa el frasco del fondo (relleno desde los bordes por color parecido al de las esquinas).
@@ -232,7 +232,101 @@ export function buildBottleGeometry(profile, shapeKey = DEFAULT_SHAPE) {
   return g;
 }
 
-export async function buildBottle({ image, backImage }) {
+// Frasco genérico para perfumes sin foto: silueta clásica (tapón, cuello, hombros, cuerpo)
+// y una "foto" pintada con los colores de sus acordes y una etiqueta con el nombre.
+const GENERIC_ASPECT = 0.62;
+
+function genericHalfWidth(v) {
+  if (v < 0.2) return 0.17;
+  if (v < 0.25) return 0.09;
+  if (v < 0.31) return 0.09 + 0.34 * Math.sin(((v - 0.25) / 0.06) * (Math.PI / 2));
+  if (v > 0.97) return 0.43 - ((v - 0.97) / 0.03) * 0.04;
+  return 0.43;
+}
+
+function genericProfile() {
+  const rings = Array.from({ length: RINGS }, (_, k) => {
+    const v = k / (RINGS - 1);
+    return { v, cx: 0.5, hw: genericHalfWidth(v) };
+  });
+  return { rings, aspect: GENERIC_ASPECT, fallback: false, generic: true };
+}
+
+// Escribe el texto en una línea encogiendo la letra hasta que quepa (y si no, con puntos suspensivos)
+function fitText(ctx, text, x, y, maxW, size, font) {
+  let s = size;
+  ctx.font = `${font} ${s}px Georgia, serif`;
+  while (s > 14 && ctx.measureText(text).width > maxW) ctx.font = `${font} ${--s}px Georgia, serif`;
+  let t = text;
+  while (t.length > 1 && ctx.measureText(t).width > maxW) t = t.slice(0, -2) + '…';
+  ctx.fillText(t, x, y);
+}
+
+function genericPhoto({ name = '', brand = '', accords = [] }, withLabel) {
+  const H = 512, W = Math.round(H * GENERIC_ASPECT);
+  const c = document.createElement('canvas');
+  c.width = W; c.height = H;
+  const ctx = c.getContext('2d');
+  const [a = '#d9a35f', b = a] = accords.slice(0, 2).map(accordColor);
+
+  // Cristal con el color de los acordes y un reflejo vertical
+  const body = ctx.createLinearGradient(0, H * 0.25, 0, H);
+  body.addColorStop(0, a);
+  body.addColorStop(1, b);
+  ctx.fillStyle = body;
+  ctx.fillRect(0, H * 0.22, W, H * 0.78);
+  const shine = ctx.createLinearGradient(0, 0, W, 0);
+  shine.addColorStop(0, 'rgba(0,0,0,0.18)');
+  shine.addColorStop(0.3, 'rgba(255,255,255,0.28)');
+  shine.addColorStop(0.4, 'rgba(255,255,255,0)');
+  shine.addColorStop(1, 'rgba(0,0,0,0.22)');
+  ctx.fillStyle = shine;
+  ctx.fillRect(0, H * 0.22, W, H * 0.78);
+
+  // Tapón dorado y cuello
+  const metal = ctx.createLinearGradient(0, 0, W, 0);
+  metal.addColorStop(0, '#6b4f2a');
+  metal.addColorStop(0.4, '#ecd29a');
+  metal.addColorStop(1, '#5c4322');
+  ctx.fillStyle = metal;
+  ctx.fillRect(0, 0, W, H * 0.2);
+  ctx.fillStyle = '#b8945a';
+  ctx.fillRect(0, H * 0.2, W, H * 0.06);
+
+  if (withLabel) {
+    const lw = W * 0.56, lh = H * 0.24, lx = (W - lw) / 2, ly = H * 0.5;
+    ctx.fillStyle = 'rgba(255,250,240,0.93)';
+    ctx.beginPath();
+    ctx.roundRect(lx, ly, lw, lh, 6);
+    ctx.fill();
+    ctx.fillStyle = '#2a1d14';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    fitText(ctx, name || '?', W / 2, ly + lh * 0.42, lw * 0.88, 30, 'bold');
+    ctx.fillStyle = '#7a6250';
+    fitText(ctx, brand.toUpperCase(), W / 2, ly + lh * 0.75, lw * 0.88, 16, '');
+  }
+  return c;
+}
+
+// Sombra suave bajo el frasco
+export function shadowTexture() {
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+  g.addColorStop(0, 'rgba(0,0,0,0.45)');
+  g.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  return new THREE.CanvasTexture(c);
+}
+
+export async function buildBottle(perfume) {
+  const { image, backImage } = perfume;
+  if (!image) {
+    return { profile: genericProfile(), texture: makeTexture(genericPhoto(perfume, true), genericPhoto(perfume, false)) };
+  }
   const [front, back] = await Promise.all([loadImage(image), backImage ? loadImage(backImage) : null]);
   return { profile: extractProfile(front), texture: makeTexture(front, back) };
 }
