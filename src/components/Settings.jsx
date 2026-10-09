@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SAMPLES } from '../lib/samples.js';
+import { parseFragranticaUrlList } from '../lib/fragrantica.js';
 import { useToast } from './ui.jsx';
 
 // CSV mínimo: nombre;marca;estado;acordes(separados por coma);valoración
@@ -53,6 +54,13 @@ export default function Settings() {
         toast('Copia restaurada.');
       }
     } catch {
+      const links = parseFragranticaUrlList(text);
+      if (links.length) {
+        store.mergePerfumes(links);
+        toast(`Añadidos ${links.length} perfumes. Complétalos con «Rellenar desde Fragrantica» al editarlos.`);
+        setCsv('');
+        return;
+      }
       const rows = parseCsv(text);
       if (rows.length) {
         store.mergePerfumes(rows);
@@ -72,7 +80,8 @@ export default function Settings() {
         <h3>Importar tu colección</h3>
         <p className="muted small">
           Pega una lista (una línea por perfume): <code>nombre;marca;estado;acordes;valoración</code>.
-          El estado puede ser tengo, quiero o tuve. También puedes pegar aquí una copia de seguridad.
+          El estado puede ser tengo, quiero o tuve. También puedes pegar enlaces de Fragrantica
+          (uno por línea, con <code>;quiero</code> o <code>;tuve</code> detrás si no lo tienes) o una copia de seguridad.
         </p>
         <textarea rows={5} value={csv} onChange={(e) => setCsv(e.target.value)}
           placeholder={"Sauvage;Dior;tengo;especiado,aromático;4\nAventus;Creed;quiero;afrutado,amaderado;"} />

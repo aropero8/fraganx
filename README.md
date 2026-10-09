@@ -70,9 +70,15 @@ Los frascos con formas muy irregulares (esculturas, tapones laterales) se aproxi
 
 ### Sobre Fragrantica
 
-Fragrantica no tiene API pública y sus condiciones no permiten scraping, así que no hay importación automática.
-Lo más rápido: copia los nombres de tu colección de Fragrantica a la lista de importar, y en cada ficha pega
-el enlace de Fragrantica (sale un botón «Ver en Fragrantica»).
+Fragrantica no tiene API pública, bloquea las peticiones automáticas y sus condiciones no permiten scraping,
+así que la app no descarga nada: lee lo que tú copias (`src/lib/fragrantica.js`, entiende la web en español e inglés).
+
+- **Rellenar un perfume**: en Nuevo/Editar, toca **Rellenar desde Fragrantica**. Abre la ficha en Fragrantica,
+  selecciona todo, copia y pégalo. Saca nombre, marca, acordes (traducidos a los de la app), pirámide de notas,
+  estaciones (las votadas al menos al 60 % de la más votada) y ocasiones (según los votos de día/noche).
+  Con solo el enlace rellena nombre y marca.
+- **Muchos a la vez**: en **Ajustes → Importar** pega enlaces de Fragrantica, uno por línea
+  (`enlace;quiero` o `enlace;tuve` si no lo tienes). Se crean con nombre, marca y enlace; luego completas cada uno.
 
 ## Estructura
 
