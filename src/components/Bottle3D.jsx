@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { SHAPES, DEFAULT_SHAPE } from '../lib/constants.js';
 import { buildBottle, buildBottleGeometry } from '../lib/bottle3d.js';
+import { Icon } from './ui.jsx';
 
 // Sombra suave bajo el frasco
 function shadowTexture() {
@@ -120,7 +121,7 @@ export default function Bottle3D({ perfume, onShapeChange, onClose }) {
   return (
     <div className="viewer3d">
       <header className="topbar">
-        <button className="link" onClick={onClose}>‹ Cerrar</button>
+        <button className="link link--icon" onClick={onClose}><Icon name="back" size={20} /> Cerrar</button>
         <strong>{perfume.name}</strong>
         <span />
       </header>

@@ -81,19 +81,22 @@ export function StoreProvider({ children }) {
       deleteComment(id, commentId) {
         updatePerfume(id, (p) => ({ comments: p.comments.filter((c) => c.id !== commentId) }));
       },
+      // Devuelve el id del uso para poder deshacerlo
       logWear(id, { weather, occasion }) {
+        const wear = {
+          id: uid(),
+          date: todayKey(),
+          temp: weather?.effective ?? null,
+          conditions: weather?.conditions ?? [],
+          occasion: occasion || null,
+          feedback: 0,
+        };
+        updatePerfume(id, (p) => ({ wears: [...p.wears.filter((w) => w.date !== todayKey()), wear] }));
+        return wear.id;
+      },
+      restoreComment(id, comment) {
         updatePerfume(id, (p) => ({
-          wears: [
-            ...p.wears.filter((w) => w.date !== todayKey()),
-            {
-              id: uid(),
-              date: todayKey(),
-              temp: weather?.effective ?? null,
-              conditions: weather?.conditions ?? [],
-              occasion: occasion || null,
-              feedback: 0,
-            },
-          ],
+          comments: [...p.comments, comment].sort((a, b) => b.date.localeCompare(a.date)),
         }));
       },
       rateWear(id, wearId, feedback) {

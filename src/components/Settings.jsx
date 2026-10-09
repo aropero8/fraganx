@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SAMPLES } from '../lib/samples.js';
+import { useToast } from './ui.jsx';
 
 // CSV mínimo: nombre;marca;estado;acordes(separados por coma);valoración
 function parseCsv(text) {
@@ -24,7 +25,7 @@ function parseCsv(text) {
 
 export default function Settings() {
   const store = useStore();
-  const [msg, setMsg] = useState('');
+  const toast = useToast();
   const [csv, setCsv] = useState('');
 
   const backup = JSON.stringify({ version: 1, perfumes: store.perfumes, location: store.location });
@@ -32,9 +33,9 @@ export default function Settings() {
   const exportJson = async () => {
     try {
       await navigator.clipboard.writeText(backup);
-      setMsg('Copia de seguridad copiada al portapapeles. Pégala en una nota o en un email.');
+      toast('Copia de seguridad copiada al portapapeles. Pégala en una nota o en un email.');
     } catch {
-      setMsg('No pude copiar al portapapeles.');
+      toast('No pude copiar al portapapeles.');
     }
     // En navegador además descargamos el archivo
     const a = document.createElement('a');
@@ -49,15 +50,15 @@ export default function Settings() {
       if (!Array.isArray(data.perfumes)) throw new Error();
       if (confirm(`Esto reemplaza tu colección por ${data.perfumes.length} perfumes. ¿Seguir?`)) {
         store.replaceAll(data);
-        setMsg('Copia restaurada.');
+        toast('Copia restaurada.');
       }
     } catch {
       const rows = parseCsv(text);
       if (rows.length) {
         store.mergePerfumes(rows);
-        setMsg(`Añadidos ${rows.length} perfumes desde CSV.`);
+        toast(`Añadidos ${rows.length} perfumes desde CSV.`);
         setCsv('');
-      } else setMsg('No reconozco ese formato.');
+      } else toast('No reconozco ese formato.');
     }
   };
 
@@ -89,21 +90,20 @@ export default function Settings() {
 
       <section className="card">
         <h3>Copia de seguridad</h3>
-        <p className="muted small">{store.perfumes.length} perfumes guardados en este dispositivo.</p>
+        <p className="muted small">{store.perfumes.length} perfumes guardados en este dispositivo. Exporta de vez en cuando para no perderlos si cambias de móvil.</p>
         <button className="btn btn--block" onClick={exportJson}>Exportar copia</button>
       </section>
 
       <section className="card">
         <h3>Datos de prueba</h3>
+        <p className="muted small">Seis perfumes de ejemplo para ver cómo funcionan las recomendaciones.</p>
         <div className="row">
-          <button className="btn" onClick={() => { store.mergePerfumes(SAMPLES); setMsg('Ejemplos añadidos.'); }}>Cargar ejemplos</button>
+          <button className="btn" onClick={() => { store.mergePerfumes(SAMPLES); toast('Ejemplos añadidos.'); }}>Cargar ejemplos</button>
           <button className="btn btn--danger" onClick={() => {
-            if (confirm('¿Borrar TODOS los perfumes?')) { store.replaceAll({ perfumes: [], location: store.location }); setMsg('Colección vaciada.'); }
+            if (confirm('¿Borrar TODOS los perfumes?')) { store.replaceAll({ perfumes: [], location: store.location }); toast('Colección vaciada.'); }
           }}>Borrar todo</button>
         </div>
       </section>
-
-      {msg && <p className="toast">{msg}</p>}
 
       <p className="muted small center">Tiempo: Open-Meteo · Perfumario v0.1</p>
     </div>
