@@ -40,7 +40,7 @@ export default function Settings() {
     // En navegador además descargamos el archivo
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([backup], { type: 'application/json' }));
-    a.download = `perfumario-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `fraganx-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
   };
 
@@ -105,7 +105,7 @@ export default function Settings() {
         </div>
       </section>
 
-      <p className="muted small center">Tiempo: Open-Meteo · Perfumario v0.1</p>
+      <p className="muted small center">Tiempo: Open-Meteo · FraganX v0.1</p>
     </div>
   );
 }

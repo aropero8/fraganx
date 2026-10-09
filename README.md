@@ -1,4 +1,4 @@
-# Perfumario
+# FraganX
 
 Tu colección de perfumes con recomendaciones según el tiempo del día, la ocasión y tus propios comentarios.
 React + Vite, empaquetable como app Android con Capacitor.
@@ -63,6 +63,8 @@ Los frascos con formas muy irregulares (esculturas, tapones laterales) se aproxi
 ## Datos
 
 - Se guardan en el dispositivo con `@capacitor/preferences` (localStorage en web).
+- El identificador de la app (`com.alberto.perfumario`) y la clave de guardado (`perfumario:v1`) conservan el nombre
+  antiguo del proyecto a propósito: cambiarlos haría que Android la tratara como otra app y se perderían los datos.
 - **Ajustes → Exportar copia** copia un JSON al portapapeles (y lo descarga en web). Pegarlo en Importar lo restaura.
 - **Importar desde lista**: una línea por perfume, `nombre;marca;estado;acordes;valoración`.
 

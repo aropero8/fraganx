@@ -17,7 +17,8 @@ const EMPTY = {
   tuve: 'Los que ya no tienes, para recordar qué te gustó y qué no.',
 };
 
-// Preferencia de vista: solo comodidad, si falla el almacenamiento usamos cuadrícula
+// Preferencia de vista: solo comodidad, si falla el almacenamiento usamos cuadrícula.
+// (La clave mantiene el nombre antiguo del proyecto, como la de store.jsx.)
 const readLayout = () => { try { return localStorage.getItem('perfumario:layout') || 'grid'; } catch { return 'grid'; } };
 const saveLayout = (v) => { try { localStorage.setItem('perfumario:layout', v); } catch { /* sin almacenamiento */ } };
 

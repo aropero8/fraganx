@@ -3,6 +3,7 @@ import { Preferences } from '@capacitor/preferences';
 import { todayKey } from './recommend.js';
 
 // Preferences guarda en SharedPreferences en Android y en localStorage en web.
+// La clave conserva el nombre antiguo del proyecto para no perder los datos guardados.
 const KEY = 'perfumario:v1';
 const StoreCtx = createContext(null);
 

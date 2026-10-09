@@ -30,7 +30,7 @@ export default function App() {
 
   useEffect(() => { window.scrollTo(0, 0); }, [tab, view?.type]);
 
-  if (!store.ready) return <div className="splash"><Icon name="bottle" size={40} />Perfumario</div>;
+  if (!store.ready) return <div className="splash"><Icon name="bottle" size={40} />FraganX</div>;
 
   const openPerfume = (id, focus) => setView({ type: 'detail', id, focus });
 
