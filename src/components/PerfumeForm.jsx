@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { ACCORDS, OCCASIONS, SEASONS, STATUSES } from '../lib/constants.js';
+import { ACCORDS, DEFAULT_SHAPE, OCCASIONS, SEASONS, SHAPES, STATUSES } from '../lib/constants.js';
 import { Chips, Stars } from './ui.jsx';
 
 // Reduce la foto para no llenar el almacenamiento
-function resizeImage(file, max = 400) {
+// (600 px: suficiente para la miniatura y para la textura del modelo 3D)
+function resizeImage(file, max = 600) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = reject;
@@ -61,6 +62,30 @@ export default function PerfumeForm({ initial, onSave, onCancel }) {
           </label>
         </div>
       </div>
+
+      {p.image && (
+        <div className="field">
+          <span>Modelo 3D <em className="muted">(se crea con las fotos: de frente, sobre fondo liso)</em></span>
+          <div className="photo-row">
+            <label className="photo photo--small">
+              {p.backImage ? <img src={p.backImage} alt="" /> : <span>📷<br />Detrás</span>}
+              <input type="file" accept="image/*" hidden onChange={async (e) => {
+                const f = e.target.files?.[0];
+                if (f) set('backImage', await resizeImage(f));
+              }} />
+            </label>
+            <div className="grow">
+              <Chips
+                options={Object.entries(SHAPES).map(([value, s]) => ({ value, label: s.label }))}
+                value={p.shape || DEFAULT_SHAPE}
+                onChange={(v) => v && set('shape', v)}
+                multi={false}
+              />
+              {p.backImage && <button type="button" className="link small" onClick={() => set('backImage', '')}>Quitar foto de detrás</button>}
+            </div>
+          </div>
+        </div>
+      )}
 
       <label className="field">
         <span>Estado</span>

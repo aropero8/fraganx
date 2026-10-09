@@ -48,6 +48,18 @@ Todo está en `src/lib/recommend.js`. Para cada perfume que **tienes**, suma o r
 
 Cada recomendación muestra las razones, así que ves por qué te lo sugiere.
 
+## Modelo 3D del frasco
+
+En cada ficha con foto aparece **🧊 Ver en 3D**: un frasco que puedes girar y acercar con el dedo.
+Se genera en el propio móvil, sin internet ni servicios externos (`src/lib/bottle3d.js`):
+
+1. Separa el frasco del fondo de la foto y mide su silueta (el ancho a cada altura).
+2. Gira esa silueta con la sección que elijas — **plano**, **redondo** o **cuadrado** — y pega la foto encima.
+3. Si añades una **foto de detrás** (en Editar), se usa para la espalda; si no, se ve la delantera en espejo.
+
+Para que salga bien: foto **de frente**, frasco **entero** y fondo **liso** que contraste (una pared o un folio).
+Los frascos con formas muy irregulares (esculturas, tapones laterales) se aproximan, no se reconstruyen.
+
 ## Datos
 
 - Se guardan en el dispositivo con `@capacitor/preferences` (localStorage en web).

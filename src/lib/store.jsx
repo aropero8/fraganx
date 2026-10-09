@@ -22,6 +22,8 @@ export function newPerfume(partial = {}) {
     longevity: 3,
     rating: 0,
     image: '',
+    backImage: '',
+    shape: 'plano',
     fragranticaUrl: '',
     sizeMl: '',
     price: '',

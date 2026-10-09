@@ -33,3 +33,11 @@ export const CONDITIONS = ['calor', 'templado', 'frío', 'lluvia', 'humedad'];
 export const CONDITION_EMOJI = {
   calor: '☀️', templado: '🌤️', 'frío': '❄️', lluvia: '🌧️', humedad: '💧',
 };
+
+// Sección del frasco para el modelo 3D: profundidad respecto al ancho y "cuadratura" (2 = elipse)
+export const SHAPES = {
+  plano: { label: 'Plano', depth: 0.45, n: 4 },
+  redondo: { label: 'Redondo', depth: 1, n: 2 },
+  cuadrado: { label: 'Cuadrado', depth: 1, n: 6 },
+};
+export const DEFAULT_SHAPE = 'plano';

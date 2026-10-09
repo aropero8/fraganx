@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { analyzeComment } from '../lib/recommend.js';
 import { CONDITIONS, CONDITION_EMOJI, OCCASIONS, STATUSES } from '../lib/constants.js';
 import { Chips, Dots, Stars, Thumb } from './ui.jsx';
+
+// three.js pesa: solo se descarga al abrir el visor
+const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
 
 export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
   const store = useStore();
@@ -12,6 +15,7 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
   const [conditions, setConditions] = useState([]);
   const [occasions, setOccasions] = useState([]);
   const commentRef = useRef(null);
+  const [show3d, setShow3d] = useState(false);
 
   useEffect(() => {
     if (focus === 'comment') commentRef.current?.focus();
@@ -51,8 +55,15 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
           <h1>{p.name}</h1>
           <p className="muted">{p.brand}</p>
           {p.rating > 0 && <Stars value={p.rating} size={16} />}
+          {p.image && <button className="btn btn--ghost btn--small" onClick={() => setShow3d(true)}>🧊 Ver en 3D</button>}
         </div>
       </section>
+
+      {show3d && (
+        <Suspense fallback={<div className="viewer3d"><p className="viewer3d__msg muted">Cargando visor…</p></div>}>
+          <Bottle3D perfume={p} onShapeChange={(shape) => store.savePerfume({ ...p, shape })} onClose={() => setShow3d(false)} />
+        </Suspense>
+      )}
 
       <div className="segmented segmented--small">
         {Object.entries(STATUSES).map(([k, label]) => (
