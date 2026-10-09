@@ -29,7 +29,7 @@ export default function Settings() {
   const toast = useToast();
   const [csv, setCsv] = useState('');
 
-  const backup = JSON.stringify({ version: 1, perfumes: store.perfumes, location: store.location });
+  const backup = JSON.stringify({ version: 1, perfumes: store.perfumes, location: store.location, shelves: store.shelves });
 
   const exportJson = async () => {
     try {

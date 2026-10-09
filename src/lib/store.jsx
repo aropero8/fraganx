@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { Preferences } from '@capacitor/preferences';
 import { todayKey } from './recommend.js';
+import { pruneModels } from './modelStore.js';
 
 // Preferences guarda en SharedPreferences en Android y en localStorage en web.
 // La clave conserva el nombre antiguo del proyecto para no perder los datos guardados.
@@ -26,6 +27,8 @@ export function newPerfume(partial = {}) {
     backImage: '',
     shape: 'plano',
     fragranticaUrl: '',
+    modelKey: '',   // modelo 3D importado (.glb), guardado aparte en IndexedDB
+    modelName: '',
     sizeMl: '',
     price: '',
     leftReason: '',
@@ -37,14 +40,20 @@ export function newPerfume(partial = {}) {
 }
 
 export function StoreProvider({ children }) {
-  const [state, setState] = useState({ perfumes: [], location: null });
+  // shelves: estilo de la estantería de cada pestaña ({ tengo: { material, back, light }, … })
+  const [state, setState] = useState({ perfumes: [], location: null, shelves: {} });
   const [ready, setReady] = useState(false);
   const loaded = useRef(false);
 
   useEffect(() => {
     Preferences.get({ key: KEY }).then(({ value }) => {
+      let saved = null;
       if (value) {
-        try { setState((s) => ({ ...s, ...JSON.parse(value) })); } catch { /* datos corruptos: empezamos de cero */ }
+        try { saved = JSON.parse(value); setState((s) => ({ ...s, ...saved })); } catch { /* datos corruptos: empezamos de cero */ }
+      }
+      // Con los datos leídos bien, borramos los modelos 3D que ya no usa nadie
+      if (saved || !value) {
+        pruneModels((saved?.perfumes || []).map((p) => p.modelKey).filter(Boolean)).catch(() => {});
       }
       loaded.current = true;
       setReady(true);
@@ -109,8 +118,14 @@ export function StoreProvider({ children }) {
       setLocation(location) {
         setState((s) => ({ ...s, location }));
       },
+      setShelf(status, style) {
+        setState((s) => ({ ...s, shelves: { ...s.shelves, [status]: style } }));
+      },
+      setAllShelves(style) {
+        setState((s) => ({ ...s, shelves: { tengo: style, quiero: style, tuve: style } }));
+      },
       replaceAll(data) {
-        setState({ perfumes: data.perfumes || [], location: data.location ?? null });
+        setState((s) => ({ perfumes: data.perfumes || [], location: data.location ?? null, shelves: data.shelves ?? s.shelves }));
       },
       mergePerfumes(list) {
         setState((s) => ({ ...s, perfumes: [...list.map((p) => newPerfume(p)), ...s.perfumes] }));

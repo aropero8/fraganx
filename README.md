@@ -61,12 +61,30 @@ Para que salga bien: foto **de frente**, frasco **entero** y fondo **liso** que 
 Los frascos con formas muy irregulares (esculturas, tapones laterales) se aproximan, no se reconstruyen.
 Los perfumes sin foto tienen un frasco genérico con los colores de sus acordes y una etiqueta con su nombre.
 
+### Tu frasco real: modelos .glb
+
+No existe un catálogo de modelos 3D de perfumes que se pueda descargar, pero puedes importar el tuyo
+(Editar → **Importar modelo 3D (.glb)**) y se usará en la estantería y el visor en lugar del frasco hecho con fotos:
+
+- **Desde una foto, con IA**: los generadores de 3D a partir de una imagen (Meshy, Tripo, etc.) funcionan bien con
+  frascos; usa una foto de frente sobre fondo blanco (las de Fragrantica o de tiendas valen) y descarga en GLB.
+- **Escaneándolo** con una app de escaneo 3D del móvil (Polycam, KIRI Engine, Scaniverse…). El cristal transparente
+  cuesta escanearlo: mejor con buena luz y sin reflejos.
+
+Admite GLB con compresión Draco o meshopt (`src/lib/model3d.js`; el decodificador de Draco está en `public/draco`).
+Los modelos se guardan en IndexedDB (`src/lib/modelStore.js`), no en la copia de seguridad: al restaurarla en otro
+móvil hay que volver a importarlos. Los que ya no usa ningún perfume se borran al arrancar la app.
+
 ## Estantería
 
 En **Colección** la vista por defecto es una estantería 3D de madera (`src/components/Shelf3D.jsx`): una por cada
 pestaña (los tengo, los quiero, los tuve), con una balda por cada fila de frascos. Respeta la búsqueda, el orden y el
 filtro de acordes. Toca un frasco para abrirlo en el visor 3D; desde ahí, **Ficha** lleva a su ficha.
 Con el botón de arriba a la derecha cambias a cuadrícula o lista.
+
+**Personalizar estantería** (debajo del mueble) elige, para cada pestaña, el material (nogal, roble, ébano, lacado
+blanco, mármol, metal o vitrina de cristal), el color del fondo y la luz (cálida, neutra, fría, rosa o apagada).
+Los cambios se ven al momento y se guardan con el resto de datos (`src/lib/shelfStyles.js`).
 
 ## Datos
 
@@ -99,10 +117,16 @@ src/
     recommend.js          motor de recomendación y lectura de comentarios
     store.jsx             estado y persistencia
     samples.js            datos de ejemplo
+    bottle3d.js           frasco 3D a partir de las fotos (o genérico)
+    model3d.js            carga de modelos .glb importados
+    modelStore.js         modelos importados en IndexedDB
+    shelfStyles.js        materiales, fondos y luces de la estantería
+    fragrantica.js        lectura del texto copiado de Fragrantica
   components/
     Today.jsx             tiempo + recomendaciones + valorar ayer
     Collection.jsx        tengo / quiero / tuve (estantería, cuadrícula o lista)
     Shelf3D.jsx           estantería 3D
+    ShelfCustomizer.jsx   material, fondo y luz de la estantería
     Bottle3D.jsx          visor 3D de un frasco
     PerfumeDetail.jsx     ficha, comentarios, historial de uso
     PerfumeForm.jsx       alta y edición

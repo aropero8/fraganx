@@ -3,6 +3,7 @@ import {
   accordColor, ACCORDS, cap, DEFAULT_SHAPE, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI, SEASONS, SHAPES, STATUSES,
 } from '../lib/constants.js';
 import { parseFragrantica } from '../lib/fragrantica.js';
+import { isGlb, saveModel } from '../lib/modelStore.js';
 import { Chips, Icon, Stars, useToast } from './ui.jsx';
 
 const INTENSITY = ['Íntima', 'Suave', 'Moderada', 'Fuerte', 'Enorme'];
@@ -85,8 +86,23 @@ function PhotoInput({ value, onChange, label, small }) {
 
 export default function PerfumeForm({ initial, onSave, onCancel }) {
   const [p, setP] = useState(initial);
+  const toast = useToast();
   const set = (k, v) => setP((x) => ({ ...x, [k]: v }));
   const setNote = (k, v) => setP((x) => ({ ...x, notes: { ...x.notes, [k]: v } }));
+
+  // Sin "accept": en Android el selector no reconoce la extensión .glb y no dejaría elegir el archivo
+  const importModel = async (file) => {
+    const buffer = await file.arrayBuffer();
+    if (!isGlb(buffer)) return toast('Ese archivo no es un modelo 3D .glb.');
+    try {
+      const modelKey = await saveModel(buffer);
+      setP((x) => ({ ...x, modelKey, modelName: file.name }));
+      const mb = buffer.byteLength / 1e6;
+      toast(mb > 25 ? `Modelo importado. Pesa ${Math.round(mb)} MB: puede ir lento en la estantería.` : 'Modelo importado.');
+    } catch {
+      toast('No pude guardar el modelo en el móvil.');
+    }
+  };
 
   const submit = (e) => {
     e.preventDefault();
@@ -176,25 +192,44 @@ export default function PerfumeForm({ initial, onSave, onCancel }) {
         </div>
       </section>
 
-      {p.image && (
-        <section className="card">
-          <h3>Modelo 3D</h3>
-          <p className="muted small">Se crea con las fotos. Mejor de frente, con el frasco entero y sobre un fondo liso.</p>
-          <div className="photo-row">
-            <PhotoInput value={p.backImage} onChange={(v) => set('backImage', v)} label="Detrás" small />
-            <div className="grow">
-              <span className="label">Forma del frasco</span>
-              <Chips
-                options={Object.entries(SHAPES).map(([value, s]) => ({ value, label: s.label }))}
-                value={p.shape || DEFAULT_SHAPE}
-                onChange={(v) => v && set('shape', v)}
-                multi={false}
-              />
-              {p.backImage && <button type="button" className="link link--muted small" onClick={() => set('backImage', '')}>Quitar foto de detrás</button>}
-            </div>
+      <section className="card">
+        <h3>Modelo 3D</h3>
+        {p.modelKey ? (
+          <div className="row row--between">
+            <span className="small">Usando tu modelo <b>{p.modelName || '.glb'}</b></span>
+            <button type="button" className="link link--muted small" onClick={() => setP((x) => ({ ...x, modelKey: '', modelName: '' }))}>Quitar</button>
           </div>
-        </section>
-      )}
+        ) : p.image ? (
+          <>
+            <p className="muted small">Se crea con las fotos. Mejor de frente, con el frasco entero y sobre un fondo liso.</p>
+            <div className="photo-row">
+              <PhotoInput value={p.backImage} onChange={(v) => set('backImage', v)} label="Detrás" small />
+              <div className="grow">
+                <span className="label">Forma del frasco</span>
+                <Chips
+                  options={Object.entries(SHAPES).map(([value, s]) => ({ value, label: s.label }))}
+                  value={p.shape || DEFAULT_SHAPE}
+                  onChange={(v) => v && set('shape', v)}
+                  multi={false}
+                />
+                {p.backImage && <button type="button" className="link link--muted small" onClick={() => set('backImage', '')}>Quitar foto de detrás</button>}
+              </div>
+            </div>
+          </>
+        ) : (
+          <p className="muted small">Sin foto se usa un frasco genérico. Añade una foto arriba o importa un modelo 3D.</p>
+        )}
+        <label className="btn btn--block">
+          <Icon name="cube" size={18} /> {p.modelKey ? 'Cambiar modelo 3D' : 'Importar modelo 3D (.glb)'}
+          <input type="file" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) importModel(f); }} />
+        </label>
+        {!p.modelKey && (
+          <p className="muted small">
+            Para ver tu frasco tal cual: créalo a partir de una foto con un generador 3D por IA, o escanéalo con una app
+            de escaneo 3D, y expórtalo en formato GLB.
+          </p>
+        )}
+      </section>
 
       <section className="card">
         <h3>Compra</h3>

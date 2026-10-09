@@ -421,7 +421,7 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
   background: none; color: var(--muted);
 }
 .layout-switch button.on { background: var(--surface-2); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, .15); }
-.shelf { position: relative; margin-bottom: 96px; }
+.shelf { position: relative; }
 .shelf--loading { display: grid; place-items: center; min-height: 180px; }
 .shelf__stage { touch-action: pan-y; }
 .shelf__stage canvas { display: block; }
@@ -431,6 +431,37 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
   font-size: 10px; font-weight: 600; line-height: 1.4; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
 }
+
+.shelf-customize {
+  display: flex; align-items: center; gap: 6px; margin: 12px auto 96px; padding: 7px 14px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--muted); font-size: 13px;
+}
+
+/* ---------- Panel inferior ---------- */
+.screen--sheet { padding-bottom: 55vh; } /* hueco para poder subir la estantería por encima del panel */
+.sheet { position: fixed; inset: 0; z-index: 40; display: flex; flex-direction: column; justify-content: flex-end; }
+.sheet__backdrop { position: absolute; inset: 0; border: 0; background: rgba(0, 0, 0, .15); }
+.sheet__panel {
+  position: relative; width: 100%; max-width: 560px; margin: 0 auto; max-height: 55vh; overflow: auto;
+  background: var(--surface); border: 1px solid var(--line); border-bottom: 0; border-radius: 20px 20px 0 0;
+  padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -10px 30px rgba(0, 0, 0, .35);
+  animation: sheet-up .25s ease-out;
+}
+.sheet__panel header { margin-bottom: 10px; }
+.sheet__panel .label { margin-bottom: 6px; }
+@keyframes sheet-up { from { transform: translateY(100%); } }
+/* Una fila por grupo con scroll lateral, para que el panel sea bajo y se vea la estantería detrás */
+.swatches {
+  position: relative; display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none;
+  margin: 0 -16px 14px; padding: 0 16px 2px;
+}
+.swatches::-webkit-scrollbar { display: none; }
+.swatch {
+  flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 5px 12px 5px 5px; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--text); font-size: 13px;
+}
+.swatch i { width: 22px; height: 22px; border-radius: 50%; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .2); }
+.swatch.on { border-color: var(--accent); background: var(--accent-soft); font-weight: 600; }
 
 /* ---------- Visor 3D ---------- */
 .viewer3d {
