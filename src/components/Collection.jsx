@@ -217,7 +217,7 @@ export default function Collection({ openPerfume, newPerfume }) {
         <Suspense fallback={<div className="viewer3d"><p className="viewer3d__msg muted">Cargando visor…</p></div>}>
           <Bottle3D
             perfume={viewed}
-            onShapeChange={(shape) => store.savePerfume({ ...viewed, shape })}
+            onBottleChange={(bottle) => store.savePerfume({ ...viewed, bottle })}
             onClose={() => setViewing(null)}
             onOpenDetail={() => openPerfume(viewed.id)}
           />

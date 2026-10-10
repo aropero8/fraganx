@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useRef, useState } from 
 import { Preferences } from '@capacitor/preferences';
 import { todayKey } from './recommend.js';
 import { pruneModels } from './modelStore.js';
+import { DEFAULT_BOTTLE } from './constants.js';
 
 // Preferences guarda en SharedPreferences en Android y en localStorage en web.
 // La clave conserva el nombre antiguo del proyecto para no perder los datos guardados.
@@ -23,9 +24,10 @@ export function newPerfume(partial = {}) {
     intensity: 3,
     longevity: 3,
     rating: 0,
-    image: '',
+    image: '',      // de frente
+    sideImage: '',  // de lado: da el grosor del modelo 3D
     backImage: '',
-    shape: 'plano',
+    bottle: { ...DEFAULT_BOTTLE },
     fragranticaUrl: '',
     modelKey: '',   // modelo 3D importado (.glb), guardado aparte en IndexedDB
     modelName: '',

@@ -1,15 +1,16 @@
 import * as THREE from 'three';
-import { accordColor, SHAPES, DEFAULT_SHAPE } from './constants.js';
+import { accordColor, DEFAULT_BOTTLE, SECTIONS, THICKNESS } from './constants.js';
 
-// Construye un frasco 3D a partir de la foto de frente (y opcionalmente la de detrás).
-// 1. Separa el frasco del fondo (relleno desde los bordes por color parecido al de las esquinas).
-// 2. Saca la silueta: el ancho del frasco en cada altura.
-// 3. Gira esa silueta con la sección elegida (redonda, plana o cuadrada) y le pega las fotos encima.
+// Construye un frasco 3D a partir de la foto de frente y, si las hay, las de lado y detrás.
+// 1. Separa el frasco del fondo de cada foto (relleno desde los bordes por color parecido al de las esquinas).
+// 2. Saca la silueta de cada una: la de frente da el ancho a cada altura y la de lado, el grosor.
+// 3. Recorre esa silueta con la sección elegida para el tapón y el cuerpo (redonda o rectangular)
+//    y pega cada foto en su lado del frasco.
 
 
 const ANALYSIS_MAX = 320; // px del lado mayor para analizar la silueta
 const RINGS = 140;        // cortes horizontales del modelo
-const SEGMENTS = 48;      // puntos por media vuelta (delante / detrás)
+const SEGMENTS = 48;      // puntos por media vuelta
 
 export function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -125,60 +126,129 @@ export function extractProfile(img) {
   };
 }
 
-// Textura combinada: mitad izquierda la foto de frente, mitad derecha la de detrás en espejo.
-function makeTexture(front, back) {
+// Textura con una franja por foto: frente, detrás en espejo y, si la hay, lado.
+// layout dice dónde empieza (u0) y cuánto ocupa (w) cada franja, en fracción del ancho.
+function makeTexture(front, back, side) {
   const H = Math.min(1024, front.height);
-  const W = Math.round((front.width / front.height) * H);
+  const widthOf = (img) => Math.round((img.width / img.height) * H);
+  const strips = [['front', front, false], ['back', back || front, true], ...(side ? [['side', side, false]] : [])];
+  const total = strips.reduce((s, [, img]) => s + widthOf(img), 0);
   const c = document.createElement('canvas');
-  c.width = W * 2; c.height = H;
+  c.width = total; c.height = H;
   const ctx = c.getContext('2d');
-  ctx.drawImage(front, 0, 0, W, H);
-  ctx.save();
-  ctx.translate(W * 2, 0);
-  ctx.scale(-1, 1);
-  ctx.drawImage(back || front, 0, 0, W, H);
-  ctx.restore();
+  const layout = {};
+  let x = 0;
+  for (const [key, img, mirror] of strips) {
+    const w = widthOf(img);
+    ctx.save();
+    ctx.translate(mirror ? x + w : x, 0);
+    if (mirror) ctx.scale(-1, 1);
+    ctx.drawImage(img, 0, 0, w, H);
+    ctx.restore();
+    layout[key] = { u0: x / total, w: w / total };
+    x += w;
+  }
   if (!back) {
     // Sin foto trasera: la espalda es la delantera en espejo, algo más apagada
     ctx.fillStyle = 'rgba(0,0,0,0.18)';
-    ctx.fillRect(W, 0, W, H);
+    ctx.fillRect(layout.back.u0 * total, 0, layout.back.w * total, H);
   }
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
-  return tex;
+  return { texture: tex, layout };
+}
+
+// Primer corte del cuerpo (los de encima son el tapón): el cuello, que es más estrecho que lo de
+// encima y lo de debajo, o si no hay cuello, donde más se ensancha. Solo se busca en la mitad de
+// arriba; 0 si no se ve un tapón claro.
+function capEnd(widths) {
+  const n = widths.length, lim = Math.round(n * 0.55);
+  const above = [], below = [];
+  for (let k = 0, m = 0; k < n; k++) above[k] = m = Math.max(m, widths[k]);
+  for (let k = n - 1, m = 0; k >= 0; k--) below[k] = m = Math.max(m, widths[k]);
+  const body = below[lim] || 1;
+
+  let best = 0, score = 0.08;
+  for (let k = 2; k < lim; k++) {
+    const s = (Math.min(above[k], below[k]) - widths[k]) / body;
+    if (s > score) { score = s; best = k; }
+  }
+  if (best) return best;
+
+  const step = Math.max(2, Math.round(n * 0.02));
+  score = 0.2;
+  for (let k = step; k < lim - step; k++) {
+    const s = (widths[k + step] - widths[k - step]) / body;
+    if (s > score) { score = s; best = k; }
+  }
+  return best;
 }
 
 const spow = (v, e) => Math.sign(v) * Math.abs(v) ** e;
+const Q = Math.PI / 4;
 
-export function buildBottleGeometry(profile, shapeKey = DEFAULT_SHAPE) {
-  const shape = SHAPES[shapeKey] || SHAPES[DEFAULT_SHAPE];
-  const { rings, aspect } = profile;
-  const e = 2 / shape.n;
-  // Unidades: el frasco mide 2 de alto
-  const vTop = rings[0].v, vBot = rings[rings.length - 1].v;
-  const scale = 2 / ((vBot - vTop) || 1);
+// Trozos de la vuelta (t = 0 mira al frente, t = π/2 al lado derecho) y la foto de cada uno.
+// Con foto de lado cada foto cubre su cuarto y las costuras caen en las esquinas;
+// sin ella, frente y detrás se reparten la vuelta.
+const PARTS_SIDE = [['front', -Q, Q], ['side', Q, 3 * Q], ['back', 3 * Q, 5 * Q], ['side', 5 * Q, 7 * Q]];
+const PARTS_NO_SIDE = [['front', -2 * Q, 2 * Q], ['back', 2 * Q, 6 * Q]];
+
+// Punto de cada foto que cae en el ángulo t de un corte (encogido un pelín para no coger fondo en el borde).
+// La de detrás está en espejo, así que se lee como la de frente. En la de lado se supone el frente a la
+// izquierda (foto hecha desde el lado derecho); el lado izquierdo del frasco la reutiliza.
+const SAMPLE = {
+  front: (r, t, e) => [r.cx + r.hw * 0.96 * spow(Math.sin(t), e), r.v],
+  back: (r, t, e) => [r.back.cx + r.back.hw * 0.96 * spow(Math.sin(t), e), r.back.v],
+  side: (r, t, e) => [r.side.cx - r.side.hw * 0.96 * spow(Math.cos(t), e), r.side.v],
+};
+
+export function buildBottleGeometry(profile, shape = DEFAULT_BOTTLE) {
+  const { rings, aspect, layout } = profile;
+  const hasSide = !!rings[0].side;
+  const split = capEnd(rings.map((r) => r.hw));
+  const sectionOf = (k) => SECTIONS[k < split ? shape.cap : shape.body] || SECTIONS.rectangular;
+  const thickness = (THICKNESS[shape.thickness] || THICKNESS.plano).depth;
+
+  // Unidades: el frasco mide 2 de alto. Cada foto se escala con su propia altura del frasco.
+  const span = (key) => {
+    const at = (r) => (key ? r[key] : r).v;
+    return (at(rings[rings.length - 1]) - at(rings[0])) || 1;
+  };
+  const scale = 2 / span(), sideScale = hasSide ? 2 / span('side') : 0;
   const midX = rings.reduce((s, r) => s + r.cx, 0) / rings.length;
-  const toWorld = (r) => ({
-    y: (0.5 - (r.v - vTop) / (vBot - vTop)) * 2,
-    x: ((r.cx - midX) * aspect) * scale,
-    hw: r.hw * aspect * scale,
+  const world = rings.map((r, k) => {
+    const hw = r.hw * aspect * scale;
+    const roundCap = k < split && shape.cap === 'redondo';
+    return {
+      y: (0.5 - (r.v - rings[0].v) / span()) * 2,
+      x: (r.cx - midX) * aspect * scale,
+      hw,
+      depth: hasSide ? r.side.hw * profile.sideAspect * sideScale : hw * (roundCap ? 1 : thickness),
+      e: 2 / sectionOf(k).n,
+    };
   });
 
   const point = (k, t) => {
-    const r = toWorld(rings[k]);
-    return new THREE.Vector3(r.x + r.hw * spow(Math.sin(t), e), r.y, r.hw * shape.depth * spow(Math.cos(t), e));
+    const w = world[k];
+    return new THREE.Vector3(w.x + w.hw * spow(Math.sin(t), w.e), w.y, w.depth * spow(Math.cos(t), w.e));
+  };
+  const uvOf = (key, k, t) => {
+    const [x, v] = SAMPLE[key](rings[k], t, world[k].e);
+    return [layout[key].u0 + x * layout[key].w, 1 - v];
   };
 
   const pos = [], nor = [], uv = [], idx = [];
   const tmpA = new THREE.Vector3(), tmpB = new THREE.Vector3();
+  const steps = SEGMENTS / 2;
 
-  // Dos mitades con vértices propios para que la textura no salte de una foto a otra
-  for (const half of [0, 1]) {
+  // Cada trozo lleva vértices propios para que la textura no salte de una foto a otra
+  for (const [key, from, to] of hasSide ? PARTS_SIDE : PARTS_NO_SIDE) {
     const base = pos.length / 3;
+    const segs = Math.round((steps * (to - from)) / (2 * Q));
     for (let k = 0; k < rings.length; k++) {
-      for (let j = 0; j <= SEGMENTS; j++) {
-        const t = -Math.PI / 2 + Math.PI * (j / SEGMENTS) + half * Math.PI;
+      for (let j = 0; j <= segs; j++) {
+        const t = from + ((to - from) * j) / segs;
         const p = point(k, t);
         pos.push(p.x, p.y, p.z);
 
@@ -188,37 +258,32 @@ export function buildBottleGeometry(profile, shapeKey = DEFAULT_SHAPE) {
         const n = new THREE.Vector3().crossVectors(tmpA, tmpB).normalize();
         if (!Number.isFinite(n.x) || n.lengthSq() === 0) n.set(Math.sin(t), 0, Math.cos(t));
         nor.push(n.x, n.y, n.z);
-
-        // Posición horizontal en la foto (encogida un pelín para no coger fondo en el borde)
-        const r = rings[k];
-        const s = Math.sin(t);
-        const imgX = r.cx + r.hw * 0.96 * spow(s, e);
-        uv.push(half === 0 ? imgX * 0.5 : 0.5 + imgX * 0.5, 1 - r.v);
+        uv.push(...uvOf(key, k, t));
       }
     }
-    const row = SEGMENTS + 1;
+    const row = segs + 1;
     for (let k = 0; k < rings.length - 1; k++) {
-      for (let j = 0; j < SEGMENTS; j++) {
+      for (let j = 0; j < segs; j++) {
         const a = base + k * row + j, b = a + row;
         idx.push(a, b, a + 1, a + 1, b, b + 1);
       }
     }
   }
 
-  // Tapas arriba y abajo
+  // Tapas arriba y abajo, con el color de la foto de frente
   for (const [k, ny] of [[0, 1], [rings.length - 1, -1]]) {
-    const r = toWorld(rings[k]);
+    const w = world[k];
     const center = pos.length / 3;
-    pos.push(r.x, r.y, 0); nor.push(0, ny, 0); uv.push(rings[k].cx * 0.5, 1 - rings[k].v);
+    pos.push(w.x, w.y, 0); nor.push(0, ny, 0); uv.push(...uvOf('front', k, 0));
     const start = pos.length / 3;
-    const steps = SEGMENTS * 2;
-    for (let j = 0; j <= steps; j++) {
-      const t = (j / steps) * Math.PI * 2;
+    const around = SEGMENTS * 2;
+    for (let j = 0; j <= around; j++) {
+      const t = (j / around) * Math.PI * 2;
       const p = point(k, t);
       pos.push(p.x, p.y, p.z); nor.push(0, ny, 0);
-      uv.push((rings[k].cx + rings[k].hw * 0.9 * spow(Math.sin(t), e)) * 0.5, 1 - rings[k].v);
+      uv.push(...uvOf('front', k, t));
     }
-    for (let j = 0; j < steps; j++) {
+    for (let j = 0; j < around; j++) {
       if (ny > 0) idx.push(center, start + j, start + j + 1);
       else idx.push(center, start + j + 1, start + j);
     }
@@ -322,11 +387,37 @@ export function shadowTexture() {
   return new THREE.CanvasTexture(c);
 }
 
+// La foto de detrás se pega en espejo, así que su centro también va en espejo. Si no se distingue
+// el frasco en ella (o no hay), se supone encuadrada como la de frente.
+function attachBack(profile, back) {
+  profile.rings.forEach((r, k) => {
+    const b = back && !back.fallback ? back.rings[k] : r;
+    r.back = { v: b.v, cx: 1 - b.cx, hw: b.hw };
+  });
+}
+
 export async function buildBottle(perfume) {
-  const { image, backImage } = perfume;
+  const { image, backImage, sideImage } = perfume;
   if (!image) {
-    return { profile: genericProfile(), texture: makeTexture(genericPhoto(perfume, true), genericPhoto(perfume, false)) };
+    const profile = genericProfile();
+    attachBack(profile, null);
+    const { texture, layout } = makeTexture(genericPhoto(perfume, true), genericPhoto(perfume, false));
+    return { profile: { ...profile, layout }, texture };
   }
-  const [front, back] = await Promise.all([loadImage(image), backImage ? loadImage(backImage) : null]);
-  return { profile: extractProfile(front), texture: makeTexture(front, back) };
+  const load = (src) => (src ? loadImage(src) : null);
+  const [front, back, side] = await Promise.all([load(image), load(backImage), load(sideImage)]);
+  const profile = extractProfile(front);
+  attachBack(profile, back && extractProfile(back));
+
+  // Cada corte de la foto de lado está a la misma altura relativa que el de la de frente
+  const sideProfile = side && extractProfile(side);
+  const sideOk = !!sideProfile && !sideProfile.fallback && !profile.fallback;
+  if (sideOk) {
+    profile.rings.forEach((r, k) => { r.side = sideProfile.rings[k]; });
+    profile.sideAspect = sideProfile.aspect;
+  }
+  profile.sideFailed = !!side && !sideOk;
+
+  const { texture, layout } = makeTexture(front, back, sideOk ? side : null);
+  return { profile: { ...profile, layout }, texture };
 }

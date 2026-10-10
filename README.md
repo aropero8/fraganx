@@ -53,11 +53,15 @@ Cada recomendación muestra las razones, así que ves por qué te lo sugiere.
 En cada ficha con foto aparece **🧊 Ver en 3D**: un frasco que puedes girar y acercar con el dedo.
 Se genera en el propio móvil, sin internet ni servicios externos (`src/lib/bottle3d.js`):
 
-1. Separa el frasco del fondo de la foto y mide su silueta (el ancho a cada altura).
-2. Gira esa silueta con la sección que elijas — **plano**, **redondo** o **cuadrado** — y pega la foto encima.
-3. Si añades una **foto de detrás** (en Editar), se usa para la espalda; si no, se ve la delantera en espejo.
+1. Separa el frasco del fondo de cada foto y mide su silueta: la **de frente** da el ancho a cada altura y la
+   **de lado** (opcional, en Editar), el grosor. Sin foto de lado, el grosor se elige a ojo: plano, medio o grueso.
+2. Detecta dónde acaba el tapón (el cuello, o donde el frasco se ensancha) y recorre la silueta con la sección
+   que elijas para el **cuerpo** y para el **tapón**: redonda o rectangular.
+3. Pega cada foto en su lado: la de frente delante, la de lado en los costados (las costuras caen en las esquinas)
+   y la **de detrás** (opcional) en la espalda; sin ella, se ve la delantera en espejo.
 
-Para que salga bien: foto **de frente**, frasco **entero** y fondo **liso** que contraste (una pared o un folio).
+Para que salga bien: frasco **entero**, a la **misma distancia** en todas las fotos y fondo **liso** que contraste
+(una pared o un folio). La de lado, mejor desde la derecha del frasco (con el frente a la izquierda de la foto).
 Los frascos con formas muy irregulares (esculturas, tapones laterales) se aproximan, no se reconstruyen.
 Los perfumes sin foto tienen un frasco genérico con los colores de sus acordes y una etiqueta con su nombre.
 

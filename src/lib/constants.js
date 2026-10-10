@@ -61,10 +61,24 @@ export const CONDITION_EMOJI = {
   calor: '☀️', templado: '🌤️', 'frío': '❄️', lluvia: '🌧️', humedad: '💧',
 };
 
-// Sección del frasco para el modelo 3D: profundidad respecto al ancho y "cuadratura" (2 = elipse)
-export const SHAPES = {
-  plano: { label: 'Plano', depth: 0.45, n: 4 },
-  redondo: { label: 'Redondo', depth: 1, n: 2 },
-  cuadrado: { label: 'Cuadrado', depth: 1, n: 6 },
+// Forma del frasco hecho con fotos. El cuerpo y el tapón tienen cada uno su sección
+// ("cuadratura" de una superelipse: 2 = círculo/elipse). El grosor sale de la foto de lado;
+// sin ella, se elige a ojo respecto al ancho.
+export const SECTIONS = {
+  redondo: { label: 'Redondo', n: 2 },
+  rectangular: { label: 'Rectangular', n: 5 },
 };
-export const DEFAULT_SHAPE = 'plano';
+export const THICKNESS = {
+  plano: { label: 'Plano', depth: 0.45 },
+  medio: { label: 'Medio', depth: 0.7 },
+  grueso: { label: 'Grueso', depth: 1 },
+};
+export const DEFAULT_BOTTLE = { body: 'rectangular', cap: 'rectangular', thickness: 'plano' };
+
+// Los perfumes guardados antes solo tenían "shape" (una sección para todo el frasco)
+const LEGACY_SHAPES = {
+  plano: DEFAULT_BOTTLE,
+  redondo: { body: 'redondo', cap: 'redondo', thickness: 'grueso' },
+  cuadrado: { body: 'rectangular', cap: 'rectangular', thickness: 'grueso' },
+};
+export const bottleShape = (p) => ({ ...DEFAULT_BOTTLE, ...LEGACY_SHAPES[p.shape], ...p.bottle });

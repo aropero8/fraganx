@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import {
-  accordColor, ACCORDS, cap, DEFAULT_SHAPE, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI, SEASONS, SHAPES, STATUSES,
+  accordColor, ACCORDS, cap, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI, SEASONS, STATUSES,
 } from '../lib/constants.js';
 import { parseFragrantica } from '../lib/fragrantica.js';
 import { isGlb, saveModel } from '../lib/modelStore.js';
+import BottleShape from './BottleShape.jsx';
 import { Chips, Icon, Stars, useToast } from './ui.jsx';
 
 const INTENSITY = ['Íntima', 'Suave', 'Moderada', 'Fuerte', 'Enorme'];
@@ -201,20 +202,21 @@ export default function PerfumeForm({ initial, onSave, onCancel }) {
           </div>
         ) : p.image ? (
           <>
-            <p className="muted small">Se crea con las fotos. Mejor de frente, con el frasco entero y sobre un fondo liso.</p>
             <div className="photo-row">
+              <PhotoInput value={p.sideImage} onChange={(v) => set('sideImage', v)} label="Lado" small />
               <PhotoInput value={p.backImage} onChange={(v) => set('backImage', v)} label="Detrás" small />
-              <div className="grow">
-                <span className="label">Forma del frasco</span>
-                <Chips
-                  options={Object.entries(SHAPES).map(([value, s]) => ({ value, label: s.label }))}
-                  value={p.shape || DEFAULT_SHAPE}
-                  onChange={(v) => v && set('shape', v)}
-                  multi={false}
-                />
-                {p.backImage && <button type="button" className="link link--muted small" onClick={() => set('backImage', '')}>Quitar foto de detrás</button>}
-              </div>
+              <p className="muted small grow">
+                Se crea con las fotos. Con la de lado, el grosor es el real. Frasco entero, a la misma distancia
+                y sobre un fondo liso.
+              </p>
             </div>
+            {(p.sideImage || p.backImage) && (
+              <div className="row">
+                {p.sideImage && <button type="button" className="link link--muted small" onClick={() => set('sideImage', '')}>Quitar la de lado</button>}
+                {p.backImage && <button type="button" className="link link--muted small" onClick={() => set('backImage', '')}>Quitar la de detrás</button>}
+              </div>
+            )}
+            <BottleShape perfume={p} onChange={(v) => set('bottle', v)} />
           </>
         ) : (
           <p className="muted small">Sin foto se usa un frasco genérico. Añade una foto arriba o importa un modelo 3D.</p>
