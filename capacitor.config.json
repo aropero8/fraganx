@@ -1,5 +1,6 @@
 {
   "appId": "com.alberto.perfumario",
   "appName": "FraganX",
-  "webDir": "dist"
+  "webDir": "dist",
+  "backgroundColor": "#120e0c"
 }
