@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono FraganX: silueta para iconos temáticos (Android 13+) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M49.86,41.12H58.14A0.92,0.92 0 0 1 59.06,42.04V45.26A0.92,0.92 0 0 1 58.14,46.18H49.86A0.92,0.92 0 0 1 48.94,45.26V42.04A0.92,0.92 0 0 1 49.86,41.12Z"
+        android:fillAlpha="0.7" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M48.02,29.16H59.98A2.76,2.76 0 0 1 62.74,31.92V38.36A2.76,2.76 0 0 1 59.98,41.12H48.02A2.76,2.76 0 0 1 45.26,38.36V31.92A2.76,2.76 0 0 1 48.02,29.16Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M43.88,45.72H64.12A7.36,7.36 0 0 1 71.48,53.08V71.48A7.36,7.36 0 0 1 64.12,78.84H43.88A7.36,7.36 0 0 1 36.52,71.48V53.08A7.36,7.36 0 0 1 43.88,45.72ZM45.72,51.24H62.28A3.68,3.68 0 0 1 65.96,54.92V69.64A3.68,3.68 0 0 1 62.28,73.32H45.72A3.68,3.68 0 0 1 42.04,69.64V54.92A3.68,3.68 0 0 1 45.72,51.24Z"
+        android:fillType="evenOdd" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M45.72,51.24H62.28A3.68,3.68 0 0 1 65.96,54.92V69.64A3.68,3.68 0 0 1 62.28,73.32H45.72A3.68,3.68 0 0 1 42.04,69.64V54.92A3.68,3.68 0 0 1 45.72,51.24Z"
+        android:fillAlpha="0.55" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M70.56,27.32Q71.55,31.85 76.08,32.84Q71.55,33.83 70.56,38.36Q69.57,33.83 65.04,32.84Q69.57,31.85 70.56,27.32Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M34.22,37.9Q34.72,40.16 36.98,40.66Q34.72,41.16 34.22,43.42Q33.72,41.16 31.46,40.66Q33.72,40.16 34.22,37.9Z"
+        android:fillAlpha="0.75" />
+</vector>

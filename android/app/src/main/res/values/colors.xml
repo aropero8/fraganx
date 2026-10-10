@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Mismo marrón oscuro que el fondo de la app (var bg en src/styles.css) y que el fondo del icono -->
+    <color name="splash_background">#120E0C</color>
+</resources>

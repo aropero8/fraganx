@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Icono del splash: el mismo frasco del icono de la app (vector, Android 7+).
+     En Android 6 se usa drawable-nodpi/splash_icon.png, porque no admite degradados en vectores. -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/ic_launcher_foreground" />

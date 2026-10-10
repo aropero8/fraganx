@@ -16,7 +16,10 @@
     </style>
 
 
+    <!-- Splash: frasco del icono sobre el fondo de la app. Theme.SplashScreen lo pinta igual
+         en Android 12+ (splash del sistema) y en versiones anteriores (fondo de ventana). -->
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splash_icon</item>
     </style>
 </resources>
