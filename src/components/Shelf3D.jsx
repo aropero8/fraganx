@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
-import { DEFAULT_SHAPE } from '../lib/constants.js';
+import { bottleShape } from '../lib/constants.js';
 import { buildBottle, buildBottleGeometry, shadowTexture } from '../lib/bottle3d.js';
 import { fitModel, loadModel } from '../lib/model3d.js';
 import { SHELF_BACKS, SHELF_LIGHTS, shelfStyle } from '../lib/shelfStyles.js';
@@ -19,7 +19,7 @@ const MAX_ROW_LIGHTS = 6; // cada luz encarece el render: con muchas baldas nos 
 // Analizar una foto o leer un modelo cuesta: guardamos el frasco de cada perfume mientras la app esté abierta.
 // Para la estantería basta un frasco más ligero (uno de cada tres cortes).
 const cache = new Map();
-const keyOf = (p) => [p.id, p.modelKey, p.image?.length, p.image?.slice(-48), p.backImage?.length, p.name, p.brand, p.accords.join()].join('|');
+const keyOf = (p) => [p.id, p.modelKey, p.image?.length, p.image?.slice(-48), p.sideImage?.length, p.backImage?.length, p.name, p.brand, p.accords.join()].join('|');
 
 function lathe(p) {
   return buildBottle(p)
@@ -366,7 +366,7 @@ export default function Shelf3D({ perfumes, style, onPick }) {
           obj = fitModel(b.model, BOTTLE_H, SLOT * 0.8);
           size = obj.userData.size;
         } else {
-          const geometry = buildBottleGeometry(b.profile, p.shape || DEFAULT_SHAPE);
+          const geometry = buildBottleGeometry(b.profile, bottleShape(p));
           geometry.computeBoundingBox();
           const box = geometry.boundingBox;
           size = box.getSize(new THREE.Vector3());

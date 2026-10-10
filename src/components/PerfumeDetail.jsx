@@ -92,7 +92,7 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
 
       {show3d && (
         <Suspense fallback={<div className="viewer3d"><p className="viewer3d__msg muted">Cargando visor…</p></div>}>
-          <Bottle3D perfume={p} onShapeChange={(shape) => store.savePerfume({ ...p, shape })} onClose={() => setShow3d(false)} />
+          <Bottle3D perfume={p} onBottleChange={(bottle) => store.savePerfume({ ...p, bottle })} onClose={() => setShow3d(false)} />
         </Suspense>
       )}
 

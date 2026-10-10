@@ -477,6 +477,8 @@ code { background: var(--surface-2); padding: 1px 5px; border-radius: 5px; font-
 .viewer3d__msg { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; }
 .viewer3d__bar { display: flex; flex-direction: column; gap: 10px; padding: 8px 0 16px; }
 .viewer3d__bar p { margin: 0; text-align: center; }
+.bottle-shape { display: flex; flex-direction: column; gap: 6px; }
+.bottle-shape__row { display: grid; grid-template-columns: 52px 1fr; align-items: center; gap: 8px; }
 .viewer3d .topbar { position: static; margin: 0 -16px; padding: 12px 16px; }
 
 @media (prefers-reduced-motion: reduce) {
