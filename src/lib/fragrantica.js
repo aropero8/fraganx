@@ -69,7 +69,38 @@ export function parseFragranticaUrl(text) {
   return { url: m[0], brand: unslug(m[1]), name: unslug(m[2]) };
 }
 
-// Devuelve solo los campos que ha podido leer: { name, brand, accords, notes, seasons, occasions, fragranticaUrl }
+// Notas de la sección "Pirámide del perfume": cada nota en su línea, bajo su encabezado.
+// Es más completa que la descripción, que a veces se deja alguna.
+const PYRAMID_START = /^(piramide del perfume|perfume pyramid|fragrance notes)$/;
+const PYRAMID_END = /^(votar por ingredientes|vote for ingredients)/;
+const PYRAMID_SKIP = /^(mostrar|ocultar|show|hide) /;
+const PYRAMID_HEADINGS = [
+  [/^(notas de salida|salida|top notes?)$/, 'top'],
+  [/^(notas de corazon|corazon|middle notes?|heart notes?)$/, 'heart'],
+  [/^(notas de fondo|fondo|base|base notes?)$/, 'base'],
+];
+
+function parsePyramid(lines, nlines) {
+  const start = nlines.findIndex((l) => PYRAMID_START.test(l));
+  if (start < 0) return null;
+  const groups = { top: [], heart: [], base: [] };
+  let group = 'top'; // sin encabezados el perfume no tiene pirámide: todo va en salida
+  for (let i = start + 1; i < lines.length && i < start + 80; i++) {
+    const l = nlines[i];
+    if (PYRAMID_END.test(l)) break;
+    if (PYRAMID_SKIP.test(l) || /^[\d.,\s%k]+$/.test(l)) continue; // botones y votos
+    const heading = PYRAMID_HEADINGS.find(([re]) => re.test(l));
+    if (heading) { group = heading[1]; continue; }
+    if (l.length > 40) break;
+    if (!groups[group].some((n) => norm(n) === l)) groups[group].push(lines[i]);
+  }
+  const join = (list) => { const s = list.join(', '); return s && s[0].toUpperCase() + s.slice(1); };
+  const notes = { top: join(groups.top), heart: join(groups.heart), base: join(groups.base) };
+  return notes.top || notes.heart || notes.base ? notes : null;
+}
+
+// Devuelve solo los campos que ha podido leer:
+// { name, brand, accords, fragranticaAccords, notes, seasons, occasions, fragranticaUrl }
 export function parseFragrantica(text) {
   const out = {};
   if (!text?.trim()) return out;
@@ -95,20 +126,27 @@ export function parseFragrantica(text) {
   const ai = nlines.findIndex((l) => l === 'acordes principales' || l === 'main accords');
   if (ai >= 0) {
     const accords = [];
+    const named = []; // tal cual los llama Fragrantica ("fresco especiado"), de más a menos intenso
     for (let i = ai + 1; i < lines.length && i < ai + 15; i++) {
       if (/buscar por acordes|search by accords/.test(nlines[i]) || nlines[i].length > 30) break;
       const a = mapAccord(lines[i]);
-      if (a && !accords.includes(a)) accords.push(a);
+      if (!a) continue;
+      if (!accords.includes(a)) accords.push(a);
+      named.push(lines[i].toLowerCase());
     }
     if (accords.length) out.accords = accords.slice(0, 5);
+    if (named.length) out.fragranticaAccords = named;
   }
 
-  // Notas, de la descripción ("Las Notas de Salida son …; las Notas de Corazón son …; las Notas de Fondo son …")
+  // Notas: de la pirámide o, si no está, de la descripción
+  // ("Las Notas de Salida son …; las Notas de Corazón son …; las Notas de Fondo son …")
   const note = (re) => { const m = re.exec(text); return m ? tidyList(m[1]) : ''; };
   const top = note(/notas de salida son ([^;.]+)/i) || note(/top notes? (?:is|are) ([^;.]+)/i);
   const heart = note(/notas de coraz[oó]n son ([^;.]+)/i) || note(/middle notes? (?:is|are) ([^;.]+)/i);
   const base = note(/notas de fondo son ([^;.]+)/i) || note(/base notes? (?:is|are) ([^;.]+)/i);
-  if (top || heart || base) out.notes = { top, heart, base };
+  const pyramid = parsePyramid(lines, nlines);
+  if (pyramid) out.notes = pyramid;
+  else if (top || heart || base) out.notes = { top, heart, base };
   else {
     // Perfumes sin pirámide: "Las notas son a, b y c" → todo en salida
     const flat = note(/las notas son ([^;.]+)/i) || note(/(?:fragrance|perfume) notes? (?:is|are) ([^;.]+)/i);

@@ -15,7 +15,9 @@ const MISSING_PHOTOS = {
   both: ' Añade fotos de lado y de detrás en Editar para que el grosor y la espalda sean los reales.',
 };
 
-export default function Bottle3D({ perfume, onBottleChange, onClose, onOpenDetail }) {
+// A pantalla completa (con la forma del frasco y zoom) o, con "inline", integrado arriba de la ficha:
+// ahí solo gira de lado a lado para que deslizar en vertical siga moviendo la página.
+export default function Bottle3D({ perfume, onBottleChange, onClose, inline }) {
   const mountRef = useRef(null);
   const sceneRef = useRef(null);
   const [bottle, setBottle] = useState(null);
@@ -63,6 +65,17 @@ export default function Bottle3D({ perfume, onBottleChange, onClose, onOpenDetai
     controls.autoRotate = true;
     controls.autoRotateSpeed = 2;
     controls.addEventListener('start', () => { controls.autoRotate = false; });
+    if (inline) {
+      controls.enableZoom = false; // la rueda del ratón mueve la página
+      controls.minPolarAngle = controls.maxPolarAngle = Math.acos(camera.position.y / camera.position.length());
+      controls.autoRotateSpeed = 1.2;
+      renderer.domElement.style.touchAction = 'pan-y';
+    }
+
+    // Integrado no se dibuja mientras está fuera de la pantalla
+    let visible = true;
+    const io = new IntersectionObserver(([e]) => { visible = e.isIntersecting; });
+    io.observe(el);
 
     const shadowTex = shadowTexture();
     const shadow = new THREE.Mesh(
@@ -85,8 +98,10 @@ export default function Bottle3D({ perfume, onBottleChange, onClose, onOpenDetai
 
     let frame;
     const loop = () => {
-      controls.update();
-      renderer.render(scene, camera);
+      if (visible) {
+        controls.update();
+        renderer.render(scene, camera);
+      }
       frame = requestAnimationFrame(loop);
     };
     loop();
@@ -95,6 +110,7 @@ export default function Bottle3D({ perfume, onBottleChange, onClose, onOpenDetai
     return () => {
       cancelAnimationFrame(frame);
       ro.disconnect();
+      io.disconnect();
       controls.dispose();
       shadow.geometry.dispose(); shadow.material.dispose(); shadowTex.dispose();
       env.dispose(); pmrem.dispose();
@@ -134,17 +150,22 @@ export default function Bottle3D({ perfume, onBottleChange, onClose, onOpenDetai
     return () => { scene.remove(obj); };
   }, [model]);
 
+  const stage = (
+    <div className={inline ? 'hero3d__stage' : 'viewer3d__stage'} ref={mountRef}>
+      {!bottle && !model && !error && <p className="viewer3d__msg muted">Creando modelo…</p>}
+      {error && <p className="viewer3d__msg">No se pudo leer la foto.</p>}
+    </div>
+  );
+  if (inline) return stage;
+
   return (
     <div className="viewer3d">
       <header className="topbar">
         <button className="link link--icon" onClick={onClose}><Icon name="back" size={20} /> Cerrar</button>
         <strong>{perfume.name}</strong>
-        {onOpenDetail ? <button className="link" onClick={onOpenDetail}>Ficha</button> : <span />}
+        <span />
       </header>
-      <div className="viewer3d__stage" ref={mountRef}>
-        {!bottle && !model && !error && <p className="viewer3d__msg muted">Creando modelo…</p>}
-        {error && <p className="viewer3d__msg">No se pudo leer la foto.</p>}
-      </div>
+      {stage}
       <div className="viewer3d__bar">
         {!model && <BottleShape perfume={perfume} onChange={onBottleChange} thickness={bottle ? !bottle.profile.rings[0].side : !perfume.sideImage} />}
         <p className="muted small">
