@@ -20,6 +20,9 @@ const OCCASION_WORDS = {
   casual: /(diario|casual|finde|paseo|día a día)/,
 };
 
+// "Noche" ya va en las ocasiones; el día se detecta aparte para no confundirlo con "día a día"
+const DAY_WORDS = /(de d[ií]a\b(?! a d)|por el d[ií]a|por la mañana|a plena luz|mediod[ií]a)/;
+
 const NEG = /(empalag|pesad|agobi|cansin|dolor de cabeza|mare[oa]|no me gust|no (me )?(va|queda|pega) bien|horrible|sintétic|desaparec|no dura|chirr|demasiado|asfixi|nada bien|fatal|regular)/;
 const POS = /(perfect|genial|brutal|ideal|encant|favorit|cumplid|halag|me gust|bomba|espectacular|increíble|increible|bien|top|maravill)/;
 
@@ -66,6 +69,34 @@ export function warmthOf(perfume) {
   return vals.reduce((s, v) => s + v, 0) / vals.length;
 }
 
+const NIGHT_OCCASIONS = ['noche', 'cita', 'evento'];
+const DAY_OCCASIONS = ['trabajo', 'deporte', 'casual'];
+
+// Cuánto es de noche un perfume: -1 = muy de día … +1 = muy de noche.
+// Si no lo has indicado se deduce (con menos seguridad) de acordes, proyección y ocasiones.
+export function nightnessOf(p) {
+  if (p.daytime) return { value: (p.daytime - 3) / 2, known: true };
+  const occ = p.occasions || [];
+  const occBias = occ.length
+    ? (occ.filter((o) => NIGHT_OCCASIONS.includes(o)).length - occ.filter((o) => DAY_OCCASIONS.includes(o)).length) / occ.length
+    : 0;
+  const value = warmthOf(p) * 0.6 + ((p.intensity || 3) - 3) * 0.2 + occBias * 0.4;
+  return { value: clamp(value, -1, 1), known: false };
+}
+
+export function defaultMoment(d = new Date()) {
+  const h = d.getHours();
+  return h >= 19 || h < 5 ? 'noche' : 'dia';
+}
+
+// Temperatura y condiciones del momento elegido: de noche refresca
+function climateAt(weather, moment) {
+  const temp = moment === 'noche' && weather.night != null ? weather.night : weather.effective;
+  const band = temp >= 24 ? 'calor' : temp <= 13 ? 'frío' : 'templado';
+  const conditions = [band, ...weather.conditions.filter((c) => !['calor', 'frío', 'templado'].includes(c))];
+  return { temp, conditions };
+}
+
 function truncate(t, n = 60) {
   return t.length > n ? t.slice(0, n - 1).trimEnd() + '…' : t;
 }
@@ -74,6 +105,8 @@ function truncate(t, n = 60) {
 
 export function scorePerfume(p, ctx) {
   const { weather, occasion } = ctx;
+  const moment = ctx.moment || defaultMoment();
+  const climate = weather && climateAt(weather, moment);
   const reasons = [];
   let score = 0;
   const add = (w, text) => {
@@ -81,18 +114,36 @@ export function scorePerfume(p, ctx) {
     if (text && Math.abs(w) >= 0.4) reasons.push({ w, text });
   };
 
-  // 1. Clima vs. acordes
-  if (weather) {
+  // 1. Clima vs. acordes (con la temperatura del momento: de noche refresca)
+  if (climate) {
     const warmth = warmthOf(p);
-    const tf = clamp((weather.effective - 18) / 8, -1.5, 1.5); // >0 calor, <0 frío
-    const climate = -warmth * tf * 2;
+    const tf = clamp((climate.temp - 18) / 8, -1.5, 1.5); // >0 calor, <0 frío
+    const fit = -warmth * tf * 2;
     const main = (p.accords || []).slice(0, 2).join(' y ');
+    const when = moment === 'noche' ? ' esta noche' : '';
     if (main) {
-      if (climate > 0.6) add(climate, `${cap(main)}: encaja con ${weather.effective}°C`);
-      else if (climate < -0.6) add(climate, `${cap(main)} puede ser ${tf > 0 ? 'mucho para el calor' : 'poco para el frío'}`);
-      else add(climate);
+      if (fit > 0.6) add(fit, `${cap(main)}: encaja con ${climate.temp}°C${when}`);
+      else if (fit < -0.6) add(fit, `${cap(main)} puede ser ${tf > 0 ? 'mucho para el calor' : 'poco para el frío'}${when}`);
+      else add(fit);
     }
-    if (weather.conditions.includes('humedad') && warmth > 0.3) add(-0.8, 'Con humedad, lo denso agobia');
+    if (climate.conditions.includes('humedad') && warmth > 0.3) add(-0.8, 'Con humedad, lo denso agobia');
+  }
+
+  // 1b. Día o noche
+  {
+    const n = nightnessOf(p);
+    const fit = n.value * (moment === 'noche' ? 1 : -1); // >0 encaja con el momento
+    const w = fit * (n.known ? 1.8 : 1);
+    const strong = Math.abs(n.value) >= 0.9;
+    if (w > 0) {
+      add(w, moment === 'noche'
+        ? (strong ? 'Muy de noche: es su momento' : 'Es un perfume de noche')
+        : (strong ? 'Muy de día: fresco y ligero' : 'Es un perfume de día'));
+    } else {
+      add(w, moment === 'noche'
+        ? (strong ? 'Muy de día: se queda corto de noche' : 'Es más de día que de noche')
+        : (strong ? 'Muy de noche: pesa a plena luz' : 'Es más de noche que de día'));
+    }
   }
 
   // 2. Estación
@@ -115,13 +166,14 @@ export function scorePerfume(p, ctx) {
   if (p.rating) add((p.rating - 3) * 0.5, p.rating >= 4.5 ? 'De tus favoritos' : null);
 
   // 5. Tus comentarios
-  const conds = new Set(weather?.conditions || []);
+  const conds = new Set(climate?.conditions || []);
   let bestComment = null;
   for (const c of p.comments || []) {
     const a = analyzeComment(c);
     if (!a.sentiment) continue;
     const condHit = [...a.conditions].some((x) => conds.has(x));
-    const occHit = occasion && a.occasions.has(occasion);
+    const momentHit = moment === 'noche' ? a.occasions.has('noche') : DAY_WORDS.test((c.text || '').toLowerCase());
+    const occHit = (occasion && a.occasions.has(occasion)) || momentHit;
     if (condHit || occHit) {
       const w = a.sentiment * (condHit && occHit ? 2 : 1.5);
       score += w;
@@ -136,9 +188,10 @@ export function scorePerfume(p, ctx) {
   let fbTotal = 0;
   for (const wear of p.wears || []) {
     if (!wear.feedback) continue;
-    const similarTemp = weather && wear.temp != null && Math.abs(wear.temp - weather.effective) <= 5;
+    const similarTemp = climate && wear.temp != null && Math.abs(wear.temp - climate.temp) <= 5;
     if (similarTemp) fbTotal += wear.feedback * 0.8;
     if (occasion && wear.occasion === occasion) fbTotal += wear.feedback * 0.5;
+    if (wear.moment === moment) fbTotal += wear.feedback * 0.4;
   }
   fbTotal = clamp(fbTotal, -3, 3);
   if (fbTotal >= 0.8) add(fbTotal, 'Te fue bien en días parecidos');

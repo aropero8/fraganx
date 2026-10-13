@@ -100,7 +100,7 @@ function parsePyramid(lines, nlines) {
 }
 
 // Devuelve solo los campos que ha podido leer:
-// { name, brand, accords, fragranticaAccords, notes, seasons, occasions, fragranticaUrl }
+// { name, brand, accords, fragranticaAccords, notes, seasons, occasions, daytime, fragranticaUrl }
 export function parseFragrantica(text) {
   const out = {};
   if (!text?.trim()) return out;
@@ -174,6 +174,12 @@ export function parseFragrantica(text) {
     if (when.dia >= when.noche * 0.7) occ.push('casual', 'trabajo');
     if (when.noche >= when.dia * 0.7) occ.push('noche');
     out.occasions = occ;
+    // Parte de los votos que son de noche → 1 (muy de día) … 5 (muy de noche)
+    const total = when.dia + when.noche;
+    if (total > 0) {
+      const night = when.noche / total;
+      out.daytime = night < 0.3 ? 1 : night < 0.43 ? 2 : night <= 0.57 ? 3 : night <= 0.7 ? 4 : 5;
+    }
   }
 
   return out;

@@ -96,6 +96,7 @@ input::placeholder, textarea::placeholder { color: color-mix(in srgb, var(--mute
 input:focus, select:focus, textarea:focus { border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 textarea { resize: vertical; }
 input[type=range] { width: 100%; accent-color: var(--accent); }
+input[type=range].range--unset { opacity: .45; }
 .select--auto { width: auto !important; }
 
 .search { position: relative; display: flex; align-items: center; }
