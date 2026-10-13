@@ -49,7 +49,7 @@ function FragranticaFill({ onFill }) {
     onFill(data);
     setText('');
     setOpen(false);
-    toast(`Rellenado: ${keys.map((k) => FIELD_LABELS[k]).join(', ')}. Revisa que esté bien.`);
+    toast(`Rellenado: ${keys.map((k) => FIELD_LABELS[k]).filter(Boolean).join(', ')}. Revisa que esté bien.`);
   };
 
   if (!open) {
@@ -155,7 +155,11 @@ export default function PerfumeForm({ initial, onSave, onCancel }) {
         <h3>Perfil olfativo</h3>
         <div className="field">
           <span>Acordes principales <em className="muted">· tócalos por orden de importancia</em></span>
-          <Chips options={Object.keys(ACCORDS)} value={p.accords} onChange={(v) => set('accords', v)} small ordered colorOf={accordColor} />
+          {/* Al tocarlos se dejan de mostrar los de Fragrantica, que ya no coincidirían */}
+          <Chips options={Object.keys(ACCORDS)} value={p.accords} onChange={(v) => setP((x) => ({ ...x, accords: v, fragranticaAccords: [] }))} small ordered colorOf={accordColor} />
+          {p.fragranticaAccords?.length > 0 && (
+            <span className="muted small">De Fragrantica: {p.fragranticaAccords.join(', ')}</span>
+          )}
         </div>
         <fieldset className="field">
           <span>Pirámide olfativa</span>

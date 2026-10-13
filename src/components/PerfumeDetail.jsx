@@ -1,11 +1,29 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { analyzeComment, daysSince } from '../lib/recommend.js';
-import { cap, CONDITIONS, CONDITION_EMOJI, OCCASION_EMOJI, OCCASIONS, STATUSES } from '../lib/constants.js';
-import { AccordBar, AccordTags, accordGradient, Chips, Dots, Icon, Stars, useToast } from './ui.jsx';
+import { accordColor, cap, CONDITIONS, CONDITION_EMOJI, OCCASION_EMOJI, OCCASIONS, STATUSES } from '../lib/constants.js';
+import { accordGradient, Chips, Dots, Icon, Stars, useToast } from './ui.jsx';
+import { AccordBars, NotePyramid } from './FragranceProfile.jsx';
 
-// three.js pesa: solo se descarga al abrir el visor
+// three.js pesa: se descarga aparte y mientras tanto se ve la foto
 const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
+
+function Showcase({ perfume: p }) {
+  if (!p.image) {
+    const g = accordGradient(p.accords);
+    return (
+      <div className="showcase showcase--empty" style={{ '--g': g.background }}>
+        <span className="showcase__initial" style={{ color: g.color }}>{(p.name.trim()[0] || '?').toUpperCase()}</span>
+      </div>
+    );
+  }
+  return (
+    <div className="showcase">
+      <img className="showcase__bg" src={p.image} alt="" aria-hidden="true" />
+      <img className="showcase__img" src={p.image} alt={p.name} />
+    </div>
+  );
+}
 
 const CONDITION_OPTIONS = CONDITIONS.map((c) => ({ value: c, label: `${CONDITION_EMOJI[c]} ${cap(c)}` }));
 const OCCASION_OPTIONS = OCCASIONS.map((o) => ({ value: o, label: `${OCCASION_EMOJI[o]} ${cap(o)}` }));
@@ -70,17 +88,15 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         <button className="link link--strong" onClick={onEdit}>Editar</button>
       </header>
 
-      <section className={`showcase ${p.image ? '' : 'showcase--empty'}`} style={{ '--g': accordGradient(p.accords).background }}>
-        {p.image ? (
-          <>
-            <img className="showcase__bg" src={p.image} alt="" aria-hidden="true" />
-            <img className="showcase__img" src={p.image} alt={p.name} />
-          </>
-        ) : (
-          <span className="showcase__initial" style={{ color: accordGradient(p.accords).color }}>{(p.name.trim()[0] || '?').toUpperCase()}</span>
+      {/* El frasco en 3D arriba y la ficha debajo; a pantalla completa se puede acercar y cambiar la forma */}
+      <section className="hero3d" style={{ '--c': accordColor(p.accords[0]) }}>
+        {show3d ? <div className="hero3d__stage" /> : (
+          <Suspense fallback={<Showcase perfume={p} />}>
+            <Bottle3D inline perfume={p} />
+          </Suspense>
         )}
         <button className="showcase__3d" onClick={() => setShow3d(true)}>
-          <Icon name="cube" size={18} /> Ver en 3D
+          <Icon name="cube" size={18} /> Ampliar
         </button>
       </section>
 
@@ -112,13 +128,22 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         </div>
       )}
 
+      {p.accords.length > 0 && (
+        <section className="card">
+          <h3>Acordes principales</h3>
+          <AccordBars perfume={p} />
+        </section>
+      )}
+
+      {(p.notes.top || p.notes.heart || p.notes.base) && (
+        <section className="card">
+          <h3>Pirámide olfativa</h3>
+          <NotePyramid notes={p.notes} />
+        </section>
+      )}
+
       <section className="card">
-        {p.accords.length > 0 && (
-          <>
-            <AccordBar accords={p.accords} />
-            <AccordTags accords={p.accords} />
-          </>
-        )}
+        <h3>Cuándo y cómo</h3>
         <dl className="specs">
           <dt>Proyección</dt><dd><Dots value={p.intensity} /></dd>
           <dt>Duración</dt><dd><Dots value={p.longevity} /></dd>
@@ -126,13 +151,6 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
           {p.occasions.length > 0 && (<><dt>Ocasiones</dt><dd>{p.occasions.map((o) => `${OCCASION_EMOJI[o] || ''} ${cap(o)}`).join(', ')}</dd></>)}
           {p.sizeMl && (<><dt>Tamaño</dt><dd>{p.sizeMl} ml{p.price ? ` · ${p.price} €` : ''}</dd></>)}
         </dl>
-        {(p.notes.top || p.notes.heart || p.notes.base) && (
-          <div className="pyramid">
-            {p.notes.top && <p><b>Salida</b> <span>{p.notes.top}</span></p>}
-            {p.notes.heart && <p><b>Corazón</b> <span>{p.notes.heart}</span></p>}
-            {p.notes.base && <p><b>Fondo</b> <span>{p.notes.base}</span></p>}
-          </div>
-        )}
         {p.fragranticaUrl && (
           <a className="link" href={p.fragranticaUrl} target="_blank" rel="noreferrer">Ver en Fragrantica ↗</a>
         )}

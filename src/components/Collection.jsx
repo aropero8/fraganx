@@ -6,9 +6,8 @@ import { shelfStyle } from '../lib/shelfStyles.js';
 import { AccordBar, Icon, Stars, Thumb } from './ui.jsx';
 import ShelfCustomizer from './ShelfCustomizer.jsx';
 
-// three.js pesa: solo se descarga al ver la estantería o abrir un frasco
+// three.js pesa: solo se descarga al ver la estantería
 const Shelf3D = lazy(() => import('./Shelf3D.jsx'));
-const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
 
 const LAYOUTS = [
   { id: 'shelf', icon: 'shelf', label: 'Estantería' },
@@ -47,7 +46,6 @@ export default function Collection({ openPerfume, newPerfume }) {
   const [accord, setAccord] = useState(null);
   const [sort, setSort] = useState('recent');
   const [layout, setLayout] = useState(readLayout);
-  const [viewing, setViewing] = useState(null); // id del frasco abierto en 3D
   const [customizing, setCustomizing] = useState(false);
   const shelfRef = useRef(null);
 
@@ -81,7 +79,6 @@ export default function Collection({ openPerfume, newPerfume }) {
 
   const changeTab = (k) => { setTab(k); setAccord(null); };
   const changeLayout = (v) => { setLayout(v); saveLayout(v); };
-  const viewed = viewing && perfumes.find((p) => p.id === viewing);
 
   return (
     <div className={`screen ${customizing ? 'screen--sheet' : ''}`}>
@@ -151,7 +148,7 @@ export default function Collection({ openPerfume, newPerfume }) {
       ) : layout === 'shelf' ? (
         <div ref={shelfRef}>
           <Suspense fallback={<div className="shelf shelf--loading muted small">Montando la estantería…</div>}>
-            <Shelf3D perfumes={list} style={store.shelves?.[tab]} onPick={(p) => setViewing(p.id)} />
+            <Shelf3D perfumes={list} style={store.shelves?.[tab]} onPick={(p) => openPerfume(p.id)} />
           </Suspense>
           <button className="shelf-customize" onClick={openCustomizer}>
             <Icon name="palette" size={16} /> Personalizar estantería
@@ -211,17 +208,6 @@ export default function Collection({ openPerfume, newPerfume }) {
           onApplyAll={store.setAllShelves}
           onClose={() => setCustomizing(false)}
         />
-      )}
-
-      {viewed && (
-        <Suspense fallback={<div className="viewer3d"><p className="viewer3d__msg muted">Cargando visor…</p></div>}>
-          <Bottle3D
-            perfume={viewed}
-            onBottleChange={(bottle) => store.savePerfume({ ...viewed, bottle })}
-            onClose={() => setViewing(null)}
-            onOpenDetail={() => openPerfume(viewed.id)}
-          />
-        </Suspense>
       )}
     </div>
   );
