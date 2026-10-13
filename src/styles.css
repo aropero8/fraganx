@@ -378,6 +378,23 @@ input[type=range].range--unset { opacity: .45; }
 }
 .notes__name { font-size: 12.5px; line-height: 1.2; overflow-wrap: anywhere; }
 
+/* Votos de longevidad y estela */
+.votes { display: flex; flex-direction: column; gap: 8px; }
+.votes + .votes { border-top: 1px solid var(--line); padding-top: 14px; }
+.votes h4 { margin: 0; font-family: var(--serif); font-size: 16px; font-weight: 600; }
+.votes .value { color: var(--accent-strong); font-size: 14px; }
+.votes ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 7px; }
+.votes li { display: grid; grid-template-columns: minmax(96px, 38%) 1fr 36px; align-items: center; gap: 10px; font-size: 13.5px; }
+.votes__label { line-height: 1.15; }
+.votes__label small { display: block; color: var(--muted); font-size: 11px; }
+.votes__track { height: 8px; border-radius: 999px; background: var(--surface-2); overflow: hidden; }
+.votes__track span { display: block; height: 100%; border-radius: inherit; background: color-mix(in srgb, var(--accent) 40%, transparent); }
+.votes li.is-top .votes__label { font-weight: 600; }
+.votes li.is-top .votes__track span { background: var(--accent); }
+.votes__n { text-align: right; color: var(--muted); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+
+.steps { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+
 .comment-form { gap: 10px; }
 .comment-form .label { margin: 2px 0 0; }
 .comments, .wears { list-style: none; padding: 0; margin: 4px 0 0; display: flex; flex-direction: column; gap: 8px; }

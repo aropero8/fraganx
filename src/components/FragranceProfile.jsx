@@ -31,6 +31,38 @@ export function AccordBars({ perfume }) {
   );
 }
 
+// Votaciones de la comunidad de Fragrantica, de menos a más (las horas son las que da Fragrantica)
+export const LONGEVITY_VOTES = [
+  ['Escasa', 'menos de 1 h'], ['Débil', '1-2 h'], ['Moderada', '3-6 h'], ['Duradera', '7-12 h'], ['Muy duradera', 'más de 12 h'],
+];
+export const SILLAGE_VOTES = [
+  ['Suave', 'pegada a la piel'], ['Moderada', 'a un brazo'], ['Pesada', 'a un par de metros'], ['Enorme', 'llena la habitación'],
+];
+
+// Una barra por opción, como en Fragrantica; la más votada, resaltada
+export function VoteBars({ title, options, votes }) {
+  const total = (votes || []).reduce((s, v) => s + v, 0);
+  if (!total) return null;
+  const top = votes.indexOf(Math.max(...votes));
+  return (
+    <section className="votes">
+      <header className="row row--between">
+        <h4>{title}</h4>
+        <b className="value">{options[top][0]}</b>
+      </header>
+      <ul>
+        {options.map(([label, hint], i) => (
+          <li key={label} className={i === top ? 'is-top' : ''}>
+            <span className="votes__label">{label}<small>{hint}</small></span>
+            <span className="votes__track"><span style={{ width: `${(votes[i] / votes[top]) * 100}%` }} /></span>
+            <span className="votes__n">{Math.round((votes[i] / total) * 100)}%</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
 const LEVELS = [
   { key: 'top', label: 'Notas de salida', hint: 'Lo primero que hueles, los primeros minutos' },
   { key: 'heart', label: 'Notas de corazón', hint: 'El carácter del perfume, tras la primera media hora' },
