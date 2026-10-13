@@ -2,9 +2,9 @@ import { useState } from 'react';
 import {
   accordColor, ACCORDS, cap, DAYTIME, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI, SEASONS, STATUSES,
 } from '../lib/constants.js';
-import { parseFragrantica } from '../lib/fragrantica.js';
 import { isGlb, saveModel } from '../lib/modelStore.js';
 import BottleShape from './BottleShape.jsx';
+import FragranticaFill from './FragranticaFill.jsx';
 import { Chips, Icon, Stars, useToast } from './ui.jsx';
 
 const INTENSITY = ['Íntima', 'Suave', 'Moderada', 'Fuerte', 'Enorme'];
@@ -32,44 +32,6 @@ function resizeImage(file, max = 600) {
     };
     reader.readAsDataURL(file);
   });
-}
-
-const FIELD_LABELS = { name: 'nombre', brand: 'marca', accords: 'acordes', notes: 'notas', seasons: 'estaciones', occasions: 'ocasiones', daytime: 'día/noche', fragranticaUrl: 'enlace' };
-
-// Pegar el enlace o el texto copiado de la ficha de Fragrantica (seleccionar todo → copiar)
-function FragranticaFill({ onFill }) {
-  const [open, setOpen] = useState(false);
-  const [text, setText] = useState('');
-  const toast = useToast();
-
-  const fill = () => {
-    const data = parseFragrantica(text);
-    const keys = Object.keys(data);
-    if (!keys.length) return toast('No encuentro datos de Fragrantica en ese texto.');
-    onFill(data);
-    setText('');
-    setOpen(false);
-    toast(`Rellenado: ${keys.map((k) => FIELD_LABELS[k]).filter(Boolean).join(', ')}. Revisa que esté bien.`);
-  };
-
-  if (!open) {
-    return <button type="button" className="btn btn--block" onClick={() => setOpen(true)}>Rellenar desde Fragrantica</button>;
-  }
-  return (
-    <section className="card">
-      <h3>Rellenar desde Fragrantica</h3>
-      <p className="muted small">
-        Abre la ficha del perfume en Fragrantica, selecciona todo, copia y pégalo aquí.
-        Con solo el enlace se rellenan el nombre y la marca.
-      </p>
-      <textarea rows={4} value={text} onChange={(e) => setText(e.target.value)} autoFocus
-        placeholder="https://www.fragrantica.es/perfume/… o el texto de la página" />
-      <div className="row">
-        <button type="button" className="btn btn--primary" disabled={!text.trim()} onClick={fill}>Rellenar</button>
-        <button type="button" className="btn" onClick={() => setOpen(false)}>Cancelar</button>
-      </div>
-    </section>
-  );
 }
 
 function PhotoInput({ value, onChange, label, small }) {
@@ -119,7 +81,7 @@ export default function PerfumeForm({ initial, onSave, onCancel }) {
         <button className="link link--strong" disabled={!p.name.trim()}>Guardar</button>
       </header>
 
-      <FragranticaFill onFill={(data) => setP((x) => ({ ...x, ...data }))} />
+      <FragranticaFill url={p.fragranticaUrl} onFill={(data) => setP((x) => ({ ...x, ...data }))} />
 
       <div className="photo-row">
         <PhotoInput value={p.image} onChange={(v) => set('image', v)} label="Foto" />

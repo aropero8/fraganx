@@ -100,7 +100,8 @@ function parsePyramid(lines, nlines) {
 }
 
 // Devuelve solo los campos que ha podido leer:
-// { name, brand, accords, fragranticaAccords, notes, seasons, occasions, daytime, fragranticaUrl }
+// { name, brand, accords, fragranticaAccords, notes, seasons, occasions, daytime,
+//   community: { longevity: [5 votos], sillage: [4 votos] }, longevity, intensity, fragranticaUrl }
 export function parseFragrantica(text) {
   const out = {};
   if (!text?.trim()) return out;
@@ -182,6 +183,65 @@ export function parseFragrantica(text) {
     }
   }
 
+  // Rendimiento: votos de longevidad y estela. Fragrantica carga esta parte al bajar hasta ella,
+  // así que solo viene si se ha llegado al final de la página antes de copiar.
+  const longevity = sectionVotes(nlines, lines, PERFORMANCE.longevity);
+  const sillage = sectionVotes(nlines, lines, PERFORMANCE.sillage);
+  if (longevity || sillage) {
+    out.community = {};
+    if (longevity) {
+      out.community.longevity = longevity;
+      out.longevity = Math.round(average(longevity));
+    }
+    if (sillage) {
+      out.community.sillage = sillage;
+      // Estela 1-4 → proyección 1-5 de la app
+      out.intensity = Math.round(1 + (average(sillage) - 1) * 4 / 3);
+    }
+  }
+
+  return out;
+}
+
+// Opciones de cada votación, de menos a más, en español e inglés (sin tildes)
+const PERFORMANCE = {
+  longevity: {
+    start: /^(longevidad|longevity)$/,
+    options: [['escasa', 'very weak'], ['debil', 'weak'], ['moderada', 'moderate'], ['duradera', 'long lasting'], ['muy duradera', 'eternal']],
+  },
+  sillage: {
+    start: /^(estela de la fragancia|estela|sillage)$/,
+    options: [['suave', 'intimate'], ['moderada', 'moderate'], ['pesada', 'strong'], ['enorme', 'enormous']],
+  },
+};
+const PERFORMANCE_STARTS = Object.values(PERFORMANCE).map((s) => s.start);
+
+// Votos de una sección ("moderada" está en las dos: se busca solo dentro de la suya)
+function sectionVotes(nlines, lines, { start, options }) {
+  const s = nlines.findIndex((l) => start.test(l));
+  if (s < 0) return null;
+  const out = options.map(() => null);
+  for (let i = s + 1; i < lines.length - 1 && i < s + 16; i++) {
+    if (PERFORMANCE_STARTS.some((re) => re.test(nlines[i]))) break;
+    const k = options.findIndex((o) => o.includes(nlines[i]));
+    if (k < 0 || out[k] !== null) continue;
+    const v = votes(lines[i + 1]);
+    if (v !== null) out[k] = v;
+  }
+  const filled = out.map((v) => v ?? 0);
+  return filled.some((v) => v > 0) ? filled : null;
+}
+
+// Media de una votación con opciones 1, 2, 3…
+const average = (list) => list.reduce((s, v, i) => s + v * (i + 1), 0) / list.reduce((s, v) => s + v, 0);
+
+// Al completar un perfume ya guardado: lo que viene de Fragrantica se actualiza, pero lo que
+// es tuyo (nombre, enlace, estaciones, ocasiones, día/noche) solo se rellena si estaba vacío
+export function mergeFragrantica(p, data) {
+  const out = { ...p, ...data };
+  if (data.accords && !data.fragranticaAccords) out.fragranticaAccords = [];
+  for (const k of ['name', 'brand', 'fragranticaUrl', 'daytime']) if (p[k]) out[k] = p[k];
+  for (const k of ['seasons', 'occasions']) if (p[k]?.length) out[k] = p[k];
   return out;
 }
 

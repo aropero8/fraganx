@@ -3,7 +3,9 @@ import { useStore } from '../lib/store.jsx';
 import { analyzeComment, daysSince } from '../lib/recommend.js';
 import { accordColor, cap, CONDITIONS, CONDITION_EMOJI, daytimeLabel, OCCASION_EMOJI, OCCASIONS, STATUSES } from '../lib/constants.js';
 import { accordGradient, Chips, Dots, Icon, Stars, useToast } from './ui.jsx';
-import { AccordBars, NotePyramid } from './FragranceProfile.jsx';
+import { AccordBars, LONGEVITY_VOTES, NotePyramid, SILLAGE_VOTES, VoteBars } from './FragranceProfile.jsx';
+import FragranticaFill from './FragranticaFill.jsx';
+import { mergeFragrantica } from '../lib/fragrantica.js';
 
 // three.js pesa: se descarga aparte y mientras tanto se ve la foto
 const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
@@ -80,6 +82,16 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
   const rated = wears.filter((w) => w.feedback);
   const hitRate = rated.length ? Math.round((rated.filter((w) => w.feedback > 0).length / rated.length) * 100) : null;
 
+  // Lo que aún no tiene de Fragrantica: se ofrece completarlo arriba, antes de la ficha
+  const hasNotes = Boolean(p.notes.top || p.notes.heart || p.notes.base);
+  const community = p.community?.longevity || p.community?.sillage ? p.community : null;
+  const missing = [
+    !p.accords.length && 'acordes',
+    !hasNotes && 'notas',
+    !community && 'longevidad y estela',
+  ].filter(Boolean);
+  const fillFromFragrantica = (data) => store.savePerfume(mergeFragrantica(p, data));
+
   return (
     <div className="screen">
       <header className="topbar">
@@ -128,6 +140,12 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         </div>
       )}
 
+      {missing.length > 0 && (
+        <FragranticaFill open url={p.fragranticaUrl} onFill={fillFromFragrantica} title="Completa la ficha con Fragrantica">
+          <p className="muted small">Falta{missing.length > 1 ? 'n' : ''}: {missing.join(', ')}.</p>
+        </FragranticaFill>
+      )}
+
       {p.accords.length > 0 && (
         <section className="card">
           <h3>Acordes principales</h3>
@@ -135,7 +153,7 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         </section>
       )}
 
-      {(p.notes.top || p.notes.heart || p.notes.base) && (
+      {hasNotes && (
         <section className="card">
           <h3>Pirámide olfativa</h3>
           <NotePyramid notes={p.notes} />
@@ -144,9 +162,16 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
 
       <section className="card">
         <h3>Cuándo y cómo</h3>
+        {community && (
+          <>
+            <VoteBars title="Longevidad" options={LONGEVITY_VOTES} votes={community.longevity} />
+            <VoteBars title="Estela (proyección)" options={SILLAGE_VOTES} votes={community.sillage} />
+            <p className="muted tiny">Votos de la comunidad de Fragrantica</p>
+          </>
+        )}
         <dl className="specs">
-          <dt>Proyección</dt><dd><Dots value={p.intensity} /></dd>
-          <dt>Duración</dt><dd><Dots value={p.longevity} /></dd>
+          {!community?.sillage && (<><dt>Proyección</dt><dd><Dots value={p.intensity} /></dd></>)}
+          {!community?.longevity && (<><dt>Duración</dt><dd><Dots value={p.longevity} /></dd></>)}
           {p.seasons.length > 0 && (<><dt>Estaciones</dt><dd>{p.seasons.map(cap).join(', ')}</dd></>)}
           {p.daytime > 0 && (<><dt>Cuándo</dt><dd>{daytimeLabel(p.daytime)}</dd></>)}
           {p.occasions.length > 0 && (<><dt>Ocasiones</dt><dd>{p.occasions.map((o) => `${OCCASION_EMOJI[o] || ''} ${cap(o)}`).join(', ')}</dd></>)}
@@ -156,6 +181,10 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
           <a className="link" href={p.fragranticaUrl} target="_blank" rel="noreferrer">Ver en Fragrantica ↗</a>
         )}
       </section>
+
+      {missing.length === 0 && (
+        <FragranticaFill url={p.fragranticaUrl} onFill={fillFromFragrantica} title="Actualizar desde Fragrantica" />
+      )}
 
       <section className="stack">
         <h2>Mis comentarios</h2>

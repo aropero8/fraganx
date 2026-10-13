@@ -106,7 +106,11 @@ así que la app no descarga nada: lee lo que tú copias (`src/lib/fragrantica.js
 - **Rellenar un perfume**: en Nuevo/Editar, toca **Rellenar desde Fragrantica**. Abre la ficha en Fragrantica,
   selecciona todo, copia y pégalo. Saca nombre, marca, acordes (traducidos a los de la app), pirámide de notas,
   estaciones (las votadas al menos al 60 % de la más votada) y ocasiones (según los votos de día/noche).
-  Con solo el enlace rellena nombre y marca.
+  También los votos de **longevidad y estela**, que Fragrantica solo carga al bajar hasta el final de la página:
+  hay que bajar del todo antes de copiar. Con solo el enlace rellena nombre y marca.
+- **Completar uno ya guardado**: en su ficha, si le faltan acordes, notas o longevidad y estela, sale arriba
+  **Completa la ficha con Fragrantica** (y al final, **Actualizar desde Fragrantica**). Actualiza lo que viene
+  de Fragrantica y no toca tu nombre, estaciones, ocasiones ni día/noche si ya los tenías.
 - **Muchos a la vez**: en **Ajustes → Importar** pega enlaces de Fragrantica, uno por línea
   (`enlace;quiero` o `enlace;tuve` si no lo tienes). Se crean con nombre, marca y enlace; luego completas cada uno.
 
