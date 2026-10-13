@@ -1,7 +1,6 @@
-// Lee los datos de un perfume a partir de lo que el usuario copia de Fragrantica.
-// No descargamos nada: Fragrantica no tiene API, bloquea las peticiones automáticas y sus
-// condiciones no permiten scraping. El usuario abre la ficha, selecciona todo, copia y lo pega aquí.
-// Entiende la web en español (fragrantica.es) y en inglés (fragrantica.com).
+// Lee los datos de un perfume a partir de lo que el usuario copia de Fragrantica (seleccionar todo,
+// copiar y pegar). Es la única forma de tener las votaciones de estaciones, longevidad y estela, que no
+// vienen en la página descargada (fragranticaPage.js). Entiende la web en español (.es) y en inglés (.com).
 
 import { ACCORDS } from './constants.js';
 
@@ -240,6 +239,7 @@ const average = (list) => list.reduce((s, v, i) => s + v * (i + 1), 0) / list.re
 export function mergeFragrantica(p, data) {
   const out = { ...p, ...data };
   if (data.accords && !data.fragranticaAccords) out.fragranticaAccords = [];
+  if (data.accords && !data.accordStrengths) out.accordStrengths = [];
   for (const k of ['name', 'brand', 'fragranticaUrl', 'daytime']) if (p[k]) out[k] = p[k];
   for (const k of ['seasons', 'occasions']) if (p[k]?.length) out[k] = p[k];
   return out;

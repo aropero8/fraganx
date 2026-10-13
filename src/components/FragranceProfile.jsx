@@ -13,17 +13,19 @@ function inkFor(hex) {
 const TINTS = { 'fresco especiado': '#8fbf4a', 'fresh spicy': '#8fbf4a' };
 
 // Acordes como en Fragrantica: una barra por acorde, de más a menos intenso.
-// El texto copiado no trae la intensidad, solo el orden: el ancho se estima por la posición.
+// La página descargada trae la intensidad; el texto copiado solo el orden y el ancho se estima.
 export function AccordBars({ perfume }) {
   const named = perfume.fragranticaAccords?.length ? perfume.fragranticaAccords : perfume.accords;
   if (!named.length) return null;
+  const strengths = perfume.accordStrengths?.length === named.length ? perfume.accordStrengths : null;
   return (
     <ul className="accord-bars">
       {named.map((name, i) => {
         const color = TINTS[name] || accordColor(mapAccord(name));
+        const width = strengths?.[i] ? Math.max(strengths[i], 30) : Math.max(42, 100 - i * 9);
         return (
           <li key={name}>
-            <span style={{ width: `${Math.max(42, 100 - i * 9)}%`, background: color, color: inkFor(color) }}>{name}</span>
+            <span style={{ width: `${width}%`, background: color, color: inkFor(color) }}>{name}</span>
           </li>
         );
       })}
