@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import {
-  accordColor, ACCORDS, cap, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI, SEASONS, STATUSES,
+  accordColor, ACCORDS, cap, DAYTIME, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI, SEASONS, STATUSES,
 } from '../lib/constants.js';
 import { parseFragrantica } from '../lib/fragrantica.js';
 import { isGlb, saveModel } from '../lib/modelStore.js';
@@ -34,7 +34,7 @@ function resizeImage(file, max = 600) {
   });
 }
 
-const FIELD_LABELS = { name: 'nombre', brand: 'marca', accords: 'acordes', notes: 'notas', seasons: 'estaciones', occasions: 'ocasiones', fragranticaUrl: 'enlace' };
+const FIELD_LABELS = { name: 'nombre', brand: 'marca', accords: 'acordes', notes: 'notas', seasons: 'estaciones', occasions: 'ocasiones', daytime: 'día/noche', fragranticaUrl: 'enlace' };
 
 // Pegar el enlace o el texto copiado de la ficha de Fragrantica (seleccionar todo → copiar)
 function FragranticaFill({ onFill }) {
@@ -179,6 +179,19 @@ export default function PerfumeForm({ initial, onSave, onCancel }) {
           <span>Ocasiones</span>
           <Chips options={OCCASION_OPTIONS} value={p.occasions} onChange={(v) => set('occasions', v)} />
         </div>
+        <label className="field">
+          <span className="row row--between">
+            ☀️ Día o noche 🌙
+            <b className="value">{p.daytime ? DAYTIME[p.daytime - 1] : 'Sin indicar'}</b>
+          </span>
+          <input type="range" min="1" max="5" value={p.daytime || 3} onChange={(e) => set('daytime', +e.target.value)}
+            className={p.daytime ? '' : 'range--unset'} />
+        </label>
+        {p.daytime ? (
+          <button type="button" className="link link--muted small" onClick={() => set('daytime', 0)}>Sin indicar: que lo deduzca</button>
+        ) : (
+          <p className="muted small">Sin indicar, lo deduzco de los acordes y la proyección.</p>
+        )}
       </section>
 
       <section className="card">

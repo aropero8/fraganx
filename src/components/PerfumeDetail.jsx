@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { analyzeComment, daysSince } from '../lib/recommend.js';
-import { accordColor, cap, CONDITIONS, CONDITION_EMOJI, OCCASION_EMOJI, OCCASIONS, STATUSES } from '../lib/constants.js';
+import { accordColor, cap, CONDITIONS, CONDITION_EMOJI, daytimeLabel, OCCASION_EMOJI, OCCASIONS, STATUSES } from '../lib/constants.js';
 import { accordGradient, Chips, Dots, Icon, Stars, useToast } from './ui.jsx';
 import { AccordBars, NotePyramid } from './FragranceProfile.jsx';
 
@@ -148,6 +148,7 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
           <dt>Proyección</dt><dd><Dots value={p.intensity} /></dd>
           <dt>Duración</dt><dd><Dots value={p.longevity} /></dd>
           {p.seasons.length > 0 && (<><dt>Estaciones</dt><dd>{p.seasons.map(cap).join(', ')}</dd></>)}
+          {p.daytime > 0 && (<><dt>Cuándo</dt><dd>{daytimeLabel(p.daytime)}</dd></>)}
           {p.occasions.length > 0 && (<><dt>Ocasiones</dt><dd>{p.occasions.map((o) => `${OCCASION_EMOJI[o] || ''} ${cap(o)}`).join(', ')}</dd></>)}
           {p.sizeMl && (<><dt>Tamaño</dt><dd>{p.sizeMl} ml{p.price ? ` · ${p.price} €` : ''}</dd></>)}
         </dl>

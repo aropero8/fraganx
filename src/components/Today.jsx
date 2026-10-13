@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { fetchWeather, getCurrentCoords, searchCity } from '../lib/weather.js';
-import { recommend, todayKey, daysSince } from '../lib/recommend.js';
-import { cap, CONDITION_EMOJI, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI } from '../lib/constants.js';
+import { recommend, todayKey, daysSince, defaultMoment } from '../lib/recommend.js';
+import { cap, CONDITION_EMOJI, MOMENTS, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI } from '../lib/constants.js';
 import { AccordBar, Chips, Icon, Thumb, useToast } from './ui.jsx';
 
 const OCCASION_OPTIONS = OCCASIONS.map((o) => ({ value: o, label: `${OCCASION_EMOJI[o]} ${cap(o)}` }));
@@ -20,6 +20,7 @@ export default function Today({ openPerfume, goCollection }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [occasion, setOccasion] = useState(null);
+  const [moment, setMoment] = useState(defaultMoment); // por la tarde-noche, de noche
   const [cityQuery, setCityQuery] = useState('');
   const [cityResults, setCityResults] = useState([]);
   const [showAll, setShowAll] = useState(false);
@@ -61,7 +62,12 @@ export default function Today({ openPerfume, goCollection }) {
     }
   };
 
-  const ranked = useMemo(() => recommend(perfumes, { weather, occasion }), [perfumes, weather, occasion]);
+  const ranked = useMemo(() => recommend(perfumes, { weather, occasion, moment }), [perfumes, weather, occasion, moment]);
+
+  const chooseOccasion = (o) => {
+    setOccasion(o);
+    if (o === 'noche') setMoment('noche');
+  };
 
   // Lo que te has puesto hoy y lo pendiente de valorar
   const wornToday = perfumes.find((p) => p.wears?.some((w) => w.date === todayKey()));
@@ -81,19 +87,19 @@ export default function Today({ openPerfume, goCollection }) {
   const wear = (p) => {
     const prev = wornToday && wornToday.id !== p.id ? wornToday : null;
     if (prev) store.undoWear(prev.id, todayWear(prev).id);
-    const wearId = store.logWear(p.id, { weather, occasion });
+    const wearId = store.logWear(p.id, { weather, occasion, moment });
     toast(`Apuntado: hoy llevas ${p.name}`, {
       label: 'Deshacer',
       onClick: () => {
         store.undoWear(p.id, wearId);
-        if (prev) store.logWear(prev.id, { weather, occasion });
+        if (prev) store.logWear(prev.id, { weather, occasion, moment });
       },
     });
   };
 
   const unwear = (p) => {
     store.undoWear(p.id, todayWear(p).id);
-    toast(`Quitado ${p.name} de hoy`, { label: 'Deshacer', onClick: () => store.logWear(p.id, { weather, occasion }) });
+    toast(`Quitado ${p.name} de hoy`, { label: 'Deshacer', onClick: () => store.logWear(p.id, { weather, occasion, moment }) });
   };
 
   const rate = (p, w, value) => {
@@ -139,7 +145,8 @@ export default function Today({ openPerfume, goCollection }) {
                 <div className="grow">
                   <strong>{weather.label}</strong>
                   <p className="small weather__meta">
-                    {weather.min}° / {weather.max}° · sensación {weather.apparent}° · {weather.humidity}% hum.
+                    {weather.min}° / {weather.max}° · sensación {weather.apparent}°
+                    {weather.night != null && ` · noche ${weather.night}°`} · {weather.humidity}% hum.
                   </p>
                 </div>
               </div>
@@ -176,8 +183,17 @@ export default function Today({ openPerfume, goCollection }) {
       ))}
 
       <section>
+        <p className="label">¿Para cuándo?</p>
+        <div className="segmented segmented--small">
+          {Object.entries(MOMENTS).map(([k, label]) => (
+            <button key={k} className={moment === k ? 'on' : ''} aria-pressed={moment === k} onClick={() => setMoment(k)}>{label}</button>
+          ))}
+        </div>
+      </section>
+
+      <section>
         <p className="label">Ocasión</p>
-        <Chips options={OCCASION_OPTIONS} value={occasion} onChange={setOccasion} multi={false} />
+        <Chips options={OCCASION_OPTIONS} value={occasion} onChange={chooseOccasion} multi={false} />
       </section>
 
       {owned === 0 ? (

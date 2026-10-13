@@ -21,6 +21,7 @@ export function newPerfume(partial = {}) {
     notes: { top: '', heart: '', base: '' },
     seasons: [],
     occasions: [],
+    daytime: 0,     // 1 = muy de día … 5 = muy de noche; 0 = sin indicar
     intensity: 3,
     longevity: 3,
     rating: 0,
@@ -94,13 +95,14 @@ export function StoreProvider({ children }) {
         updatePerfume(id, (p) => ({ comments: p.comments.filter((c) => c.id !== commentId) }));
       },
       // Devuelve el id del uso para poder deshacerlo
-      logWear(id, { weather, occasion }) {
+      logWear(id, { weather, occasion, moment }) {
         const wear = {
           id: uid(),
           date: todayKey(),
           temp: weather?.effective ?? null,
           conditions: weather?.conditions ?? [],
           occasion: occasion || null,
+          moment: moment || null,
           feedback: 0,
         };
         updatePerfume(id, (p) => ({ wears: [...p.wears.filter((w) => w.date !== todayKey()), wear] }));

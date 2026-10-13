@@ -55,6 +55,12 @@ export const OCCASIONS = ['casual', 'trabajo', 'cita', 'noche', 'evento', 'depor
 export const OCCASION_EMOJI = { casual: '👕', trabajo: '💼', cita: '🌹', noche: '🌙', evento: '🥂', deporte: '🏃' };
 export const CONDITIONS = ['calor', 'templado', 'frío', 'lluvia', 'humedad'];
 
+// Momento para el que eliges perfume, y cuánto es de día o de noche cada perfume
+// (daytime: 1 = muy de día … 5 = muy de noche; 0 = sin indicar, se deduce de los acordes)
+export const MOMENTS = { dia: '☀️ De día', noche: '🌙 De noche' };
+export const DAYTIME = ['Muy de día', 'Más de día', 'De día y de noche', 'Más de noche', 'Muy de noche'];
+export const daytimeLabel = (v) => (v ? `${v <= 2 ? '☀️' : v >= 4 ? '🌙' : '☀️🌙'} ${DAYTIME[v - 1]}` : '');
+
 export const cap = (s) => (s ? s[0].toUpperCase() + s.slice(1) : s);
 
 export const CONDITION_EMOJI = {

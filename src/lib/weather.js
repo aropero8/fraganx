@@ -51,6 +51,7 @@ export async function fetchWeather({ lat, lon }) {
     longitude: lon,
     current: 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,precipitation',
     daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+    hourly: 'apparent_temperature',
     timezone: 'auto',
     forecast_days: '1',
   });
@@ -61,6 +62,12 @@ export async function fetchWeather({ lat, lon }) {
   const max = d.daily.temperature_2m_max[0];
   const min = d.daily.temperature_2m_min[0];
   const rainProb = d.daily.precipitation_probability_max?.[0] ?? 0;
+
+  // Sensación de la noche (20 a 23 h); si no hay previsión por horas, entre la actual y la mínima
+  const evening = (d.hourly?.apparent_temperature || []).slice(20, 24).filter((t) => t != null);
+  const night = Math.round(evening.length
+    ? evening.reduce((s, t) => s + t, 0) / evening.length
+    : (c.apparent_temperature + min) / 2);
 
   // Temperatura "efectiva" del día: mezcla de la sensación actual y la máxima,
   // porque el perfume lo llevas todo el día.
@@ -83,6 +90,7 @@ export async function fetchWeather({ lat, lon }) {
     min: Math.round(min),
     rainProb,
     effective,
+    night,
     conditions,
     season: seasonFor(new Date(), lat),
     fetchedAt: Date.now(),
