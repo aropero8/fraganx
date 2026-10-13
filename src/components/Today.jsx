@@ -73,9 +73,27 @@ export default function Today({ openPerfume, goCollection }) {
     return list.sort((a, b) => b.w.date.localeCompare(a.w.date)).slice(0, 1);
   }, [perfumes]);
 
+  const todayWear = (p) => p.wears?.find((w) => w.date === todayKey());
+  // Lo que llevas hoy arriba; el resto, debajo
+  const others = wornToday ? ranked.filter((r) => r.perfume.id !== wornToday.id) : ranked;
+
+  // Cambiar de perfume sustituye al de hoy en vez de sumar otro
   const wear = (p) => {
+    const prev = wornToday && wornToday.id !== p.id ? wornToday : null;
+    if (prev) store.undoWear(prev.id, todayWear(prev).id);
     const wearId = store.logWear(p.id, { weather, occasion });
-    toast(`Apuntado: hoy llevas ${p.name}`, { label: 'Deshacer', onClick: () => store.undoWear(p.id, wearId) });
+    toast(`Apuntado: hoy llevas ${p.name}`, {
+      label: 'Deshacer',
+      onClick: () => {
+        store.undoWear(p.id, wearId);
+        if (prev) store.logWear(prev.id, { weather, occasion });
+      },
+    });
+  };
+
+  const unwear = (p) => {
+    store.undoWear(p.id, todayWear(p).id);
+    toast(`Quitado ${p.name} de hoy`, { label: 'Deshacer', onClick: () => store.logWear(p.id, { weather, occasion }) });
   };
 
   const rate = (p, w, value) => {
@@ -171,21 +189,27 @@ export default function Today({ openPerfume, goCollection }) {
       ) : (
         <section className="recs">
           {wornToday && (
-            <p className="worn-today small"><Thumb perfume={wornToday} size={24} /> Hoy llevas <b>{wornToday.name}</b></p>
+            <>
+              <WornCard
+                perfume={wornToday}
+                onOpen={() => openPerfume(wornToday.id)}
+                onUndo={() => unwear(wornToday)}
+              />
+              {others.length > 0 && <p className="label recs__label">Si te apetece cambiar</p>}
+            </>
           )}
-          {ranked.slice(0, showAll ? ranked.length : 3).map((r, i) => (
+          {others.slice(0, showAll ? others.length : 3).map((r, i) => (
             <RecCard
               key={r.perfume.id}
               r={r}
-              hero={i === 0}
-              worn={wornToday?.id === r.perfume.id}
+              hero={!wornToday && i === 0}
               onOpen={() => openPerfume(r.perfume.id)}
               onWear={() => wear(r.perfume)}
             />
           ))}
-          {ranked.length > 3 && (
+          {others.length > 3 && (
             <button className="btn btn--ghost btn--block" onClick={() => setShowAll(!showAll)}>
-              {showAll ? 'Ver menos' : `Ver los ${ranked.length} ordenados`}
+              {showAll ? 'Ver menos' : `Ver los ${others.length} ordenados`}
             </button>
           )}
         </section>
@@ -194,7 +218,24 @@ export default function Today({ openPerfume, goCollection }) {
   );
 }
 
-function RecCard({ r, hero, worn, onOpen, onWear }) {
+function WornCard({ perfume: p, onOpen, onUndo }) {
+  return (
+    <article className="rec rec--hero rec--worn">
+      <button className="rec__top" onClick={onOpen}>
+        <Thumb perfume={p} size={104} />
+        <span className="rec__title">
+          <span className="eyebrow">✓ Hoy llevas</span>
+          <span className="h3">{p.name}</span>
+          <span className="muted small">{p.brand}</span>
+          <AccordBar accords={p.accords} />
+        </span>
+      </button>
+      <button className="link link--muted small rec__undo" onClick={onUndo}>No, hoy no lo llevo</button>
+    </article>
+  );
+}
+
+function RecCard({ r, hero, onOpen, onWear }) {
   const p = r.perfume;
   return (
     <article className={`rec ${hero ? 'rec--hero' : ''}`}>
@@ -212,8 +253,8 @@ function RecCard({ r, hero, worn, onOpen, onWear }) {
           <li key={i} className={x.w < 0 ? 'con' : 'pro'}>{x.text}</li>
         ))}
       </ul>
-      <button className={`btn ${hero ? 'btn--primary' : ''} btn--block`} onClick={onWear} disabled={worn}>
-        {worn ? '✓ Lo llevas hoy' : 'Me lo pongo hoy'}
+      <button className={`btn ${hero ? 'btn--primary' : ''} btn--block`} onClick={onWear}>
+        Me lo pongo hoy
       </button>
     </article>
   );
