@@ -100,19 +100,23 @@ Los cambios se ven al momento y se guardan con el resto de datos (`src/lib/shelf
 
 ### Sobre Fragrantica
 
-Fragrantica no tiene API pública, bloquea las peticiones automáticas y sus condiciones no permiten scraping,
-así que la app no descarga nada: lee lo que tú copias (`src/lib/fragrantica.js`, entiende la web en español e inglés).
+Fragrantica no tiene API pública y sus condiciones no permiten el acceso automático. Aun así, por comodidad,
+la app descarga la página de **tus** perfumes con el enlace que les diste, de una en una y con pausas, como lo
+haría el navegador (`src/lib/fragranticaPage.js`). Puede dejar de funcionar si Fragrantica cambia su web o
+bloquea las peticiones; entonces queda pegar el texto. Entiende la web en español (.es) y en inglés (.com).
 
-- **Rellenar un perfume**: en Nuevo/Editar, toca **Rellenar desde Fragrantica**. Abre la ficha en Fragrantica,
-  selecciona todo, copia y pégalo. Saca nombre, marca, acordes (traducidos a los de la app), pirámide de notas,
-  estaciones (las votadas al menos al 60 % de la más votada) y ocasiones (según los votos de día/noche).
-  También los votos de **longevidad y estela**, que Fragrantica solo carga al bajar hasta el final de la página:
-  hay que bajar del todo antes de copiar. Con solo el enlace rellena nombre y marca.
-- **Completar uno ya guardado**: en su ficha, si le faltan acordes, notas o longevidad y estela, sale arriba
-  **Completa la ficha con Fragrantica** (y al final, **Actualizar desde Fragrantica**). Actualiza lo que viene
-  de Fragrantica y no toca tu nombre, estaciones, ocasiones ni día/noche si ya los tenías.
+- **Qué se descarga**: nombre, marca, acordes (con su intensidad real) y pirámide de notas.
+  Las votaciones (estaciones, día/noche, longevidad y estela) no vienen en la página: Fragrantica las carga aparte.
+- **Al abrir un perfume** con enlace pero sin acordes o notas, se completa solo. En su ficha está
+  **Actualizar desde Fragrantica** para volver a descargarla.
 - **Muchos a la vez**: en **Ajustes → Importar** pega enlaces de Fragrantica, uno por línea
-  (`enlace;quiero` o `enlace;tuve` si no lo tienes). Se crean con nombre, marca y enlace; luego completas cada uno.
+  (`enlace;quiero` o `enlace;tuve` si no lo tienes). Se crean y se completan solos; si alguno queda pendiente,
+  **Ajustes → Completar desde Fragrantica** lo reintenta.
+- **Votaciones y perfumes sin enlace**: pega el texto de la página (`src/lib/fragrantica.js`): abre la ficha
+  en Fragrantica, baja hasta el final (para que cargue la longevidad y la estela), selecciona todo, copia y
+  pégalo en **Rellenar desde Fragrantica** (Nuevo/Editar) o **Añadir longevidad y estela** (en la ficha).
+  Saca además estaciones (las votadas al menos al 60 % de la más votada), ocasiones y día/noche.
+  Al completar uno ya guardado no se tocan tu nombre, estaciones, ocasiones ni día/noche si ya los tenías.
 
 ## Estructura
 
@@ -130,6 +134,7 @@ src/
     modelStore.js         modelos importados en IndexedDB
     shelfStyles.js        materiales, fondos y luces de la estantería
     fragrantica.js        lectura del texto copiado de Fragrantica
+    fragranticaPage.js    descarga y lectura de la página de un perfume en Fragrantica
   components/
     Today.jsx             tiempo + recomendaciones + valorar ayer
     Collection.jsx        tengo / quiero / tuve (estantería, cuadrícula o lista)

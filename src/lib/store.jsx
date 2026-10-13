@@ -74,6 +74,8 @@ export function StoreProvider({ children }) {
     return {
       ...state,
       ready,
+      // Cambio parcial sobre el estado más reciente (para tareas en segundo plano)
+      updatePerfume,
       savePerfume(p) {
         setState((s) => {
           const exists = s.perfumes.some((x) => x.id === p.id);

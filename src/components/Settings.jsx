@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SAMPLES } from '../lib/samples.js';
-import { parseFragranticaUrlList } from '../lib/fragrantica.js';
+import { mergeFragrantica, parseFragranticaUrlList } from '../lib/fragrantica.js';
+import { completeFromFragrantica, needsFragrantica, subscribeBatch } from '../lib/fragranticaPage.js';
 import { useToast } from './ui.jsx';
 
 // CSV mínimo: nombre;marca;estado;acordes(separados por coma);valoración
@@ -28,6 +29,30 @@ export default function Settings() {
   const store = useStore();
   const toast = useToast();
   const [csv, setCsv] = useState('');
+  const [progress, setProgress] = useState(null); // { done, total, name } mientras se completan
+  const [autoComplete, setAutoComplete] = useState(false);
+
+  const pending = store.perfumes.filter(needsFragrantica);
+  useEffect(() => subscribeBatch(setProgress), []);
+
+  // Descarga de Fragrantica los que tienen enlace pero les faltan acordes o notas, de uno en uno
+  const completeAll = async () => {
+    if (progress || !pending.length) return;
+    const result = await completeFromFragrantica(
+      pending,
+      (id, data) => store.updatePerfume(id, (cur) => mergeFragrantica(cur, { ...data, fragranticaFetchedAt: Date.now() })),
+    );
+    if (!result) return;
+    const { ok, failed } = result;
+    toast(failed ? `Completados ${ok}; ${failed} no se pudieron descargar (reinténtalo desde su ficha).` : `Completados ${ok} perfumes desde Fragrantica.`);
+  };
+
+  // Tras importar enlaces, se completan solos (cuando ya están guardados)
+  useEffect(() => {
+    if (!autoComplete) return;
+    setAutoComplete(false);
+    completeAll();
+  }, [autoComplete]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const backup = JSON.stringify({ version: 1, perfumes: store.perfumes, location: store.location, shelves: store.shelves });
 
@@ -57,7 +82,8 @@ export default function Settings() {
       const links = parseFragranticaUrlList(text);
       if (links.length) {
         store.mergePerfumes(links);
-        toast(`Añadidos ${links.length} perfumes. Complétalos con «Rellenar desde Fragrantica» al editarlos.`);
+        toast(`Añadidos ${links.length} perfumes. Descargo sus fichas de Fragrantica…`);
+        setAutoComplete(true);
         setCsv('');
         return;
       }
@@ -96,6 +122,26 @@ export default function Settings() {
           </label>
         </div>
       </section>
+
+      {(pending.length > 0 || progress) && (
+        <section className="card">
+          <h3>Completar desde Fragrantica</h3>
+          {progress ? (
+            <>
+              <p className="muted small">Descargando {progress.done + 1} de {progress.total}: <b>{progress.name}</b></p>
+              <progress className="progress" value={progress.done} max={progress.total} />
+            </>
+          ) : (
+            <>
+              <p className="muted small">
+                {pending.length} perfume{pending.length > 1 ? 's tienen' : ' tiene'} enlace pero sin acordes o notas.
+                Descargo sus fichas de una en una (unos segundos cada una).
+              </p>
+              <button className="btn btn--primary btn--block" onClick={completeAll}>Completar {pending.length}</button>
+            </>
+          )}
+        </section>
+      )}
 
       <section className="card">
         <h3>Copia de seguridad</h3>

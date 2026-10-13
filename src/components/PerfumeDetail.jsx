@@ -6,6 +6,7 @@ import { accordGradient, Chips, Dots, Icon, Stars, useToast } from './ui.jsx';
 import { AccordBars, LONGEVITY_VOTES, NotePyramid, SILLAGE_VOTES, VoteBars } from './FragranceProfile.jsx';
 import FragranticaFill from './FragranticaFill.jsx';
 import { mergeFragrantica } from '../lib/fragrantica.js';
+import { hasNotes as notesOf, loadFromFragrantica, needsFragrantica } from '../lib/fragranticaPage.js';
 
 // three.js pesa: se descarga aparte y mientras tanto se ve la foto
 const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
@@ -49,10 +50,31 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
   const [composing, setComposing] = useState(false);
   const commentRef = useRef(null);
   const [show3d, setShow3d] = useState(false);
+  const [sync, setSync] = useState({ state: 'idle' }); // descarga de Fragrantica: idle | loading | error
 
   useEffect(() => {
     if (focus === 'comment') commentRef.current?.focus();
   }, [focus]);
+
+  // Descarga su ficha de Fragrantica con el enlace que ya tiene
+  const download = async (manual = false) => {
+    const url = store.perfumes.find((x) => x.id === id)?.fragranticaUrl;
+    if (!url) return;
+    setSync({ state: 'loading' });
+    try {
+      const data = await loadFromFragrantica(url);
+      store.updatePerfume(id, (cur) => mergeFragrantica(cur, { ...data, fragranticaFetchedAt: Date.now() }));
+      setSync({ state: 'idle' });
+      if (manual) toast('Ficha actualizada desde Fragrantica');
+    } catch (e) {
+      setSync({ state: 'error', message: e.message });
+    }
+  };
+
+  // Al abrir uno sin acordes o notas, se completa solo (una vez: si la página no los trae, no insiste)
+  useEffect(() => {
+    if (p && needsFragrantica(p) && !p.fragranticaFetchedAt) download();
+  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!p) return null;
 
@@ -83,13 +105,12 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
   const hitRate = rated.length ? Math.round((rated.filter((w) => w.feedback > 0).length / rated.length) * 100) : null;
 
   // Lo que aún no tiene de Fragrantica: se ofrece completarlo arriba, antes de la ficha
-  const hasNotes = Boolean(p.notes.top || p.notes.heart || p.notes.base);
+  const hasNotes = notesOf(p);
   const community = p.community?.longevity || p.community?.sillage ? p.community : null;
-  const missing = [
-    !p.accords.length && 'acordes',
-    !hasNotes && 'notas',
-    !community && 'longevidad y estela',
-  ].filter(Boolean);
+  const missing = [!p.accords.length && 'acordes', !hasNotes && 'notas'].filter(Boolean);
+  // Sin enlace, o si la descarga no ha bastado, queda pegar el texto de la página
+  const askPaste = missing.length > 0 && sync.state !== 'loading'
+    && (!p.fragranticaUrl || sync.state === 'error' || Boolean(p.fragranticaFetchedAt));
   const fillFromFragrantica = (data) => store.savePerfume(mergeFragrantica(p, data));
 
   return (
@@ -140,7 +161,21 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         </div>
       )}
 
-      {missing.length > 0 && (
+      {sync.state === 'loading' && (
+        <section className="card card--sync">
+          <p className="muted small">Descargando la ficha de Fragrantica…</p>
+        </section>
+      )}
+
+      {sync.state === 'error' && (
+        <section className="card">
+          <h3>No pude descargar la ficha</h3>
+          <p className="muted small">{sync.message}. Comprueba la conexión y vuelve a intentarlo, o pega abajo el texto de la página.</p>
+          <button className="btn" onClick={() => download(true)}>Reintentar</button>
+        </section>
+      )}
+
+      {askPaste && (
         <FragranticaFill open url={p.fragranticaUrl} onFill={fillFromFragrantica} title="Completa la ficha con Fragrantica">
           <p className="muted small">Falta{missing.length > 1 ? 'n' : ''}: {missing.join(', ')}.</p>
         </FragranticaFill>
@@ -177,13 +212,24 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
           {p.occasions.length > 0 && (<><dt>Ocasiones</dt><dd>{p.occasions.map((o) => `${OCCASION_EMOJI[o] || ''} ${cap(o)}`).join(', ')}</dd></>)}
           {p.sizeMl && (<><dt>Tamaño</dt><dd>{p.sizeMl} ml{p.price ? ` · ${p.price} €` : ''}</dd></>)}
         </dl>
+        {!community && (
+          <p className="muted tiny">
+            La longevidad y la estela no vienen en la ficha descargada: puedes añadirlas abajo pegando el texto de su página.
+          </p>
+        )}
         {p.fragranticaUrl && (
           <a className="link" href={p.fragranticaUrl} target="_blank" rel="noreferrer">Ver en Fragrantica ↗</a>
         )}
       </section>
 
-      {missing.length === 0 && (
-        <FragranticaFill url={p.fragranticaUrl} onFill={fillFromFragrantica} title="Actualizar desde Fragrantica" />
+      {p.fragranticaUrl && missing.length === 0 && (
+        <button className="btn btn--block" disabled={sync.state === 'loading'} onClick={() => download(true)}>
+          {sync.state === 'loading' ? 'Descargando…' : 'Actualizar desde Fragrantica'}
+        </button>
+      )}
+      {!askPaste && (
+        <FragranticaFill url={p.fragranticaUrl} onFill={fillFromFragrantica}
+          title={community ? 'Pegar texto de Fragrantica' : 'Añadir longevidad y estela'} />
       )}
 
       <section className="stack">
