@@ -250,11 +250,10 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 .reasons .pro { color: var(--text); }
 .reasons .con { color: var(--muted); }
 .reasons .con::before { content: '−'; color: var(--con); }
-.worn-today {
-  display: inline-flex; align-items: center; gap: 8px; align-self: flex-start;
-  background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px 4px 4px;
-}
-.worn-today .thumb { border-radius: 50%; }
+.rec--worn { padding: 20px; }
+.rec--worn .h3 { font-size: 28px; }
+.rec__undo { align-self: flex-start; }
+.recs__label { margin: 8px 0 -4px; }
 
 /* ---------- Miniaturas ---------- */
 .thumb { border-radius: 14px; object-fit: cover; flex-shrink: 0; background: var(--surface-2); display: block; }
