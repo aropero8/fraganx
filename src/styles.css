@@ -254,6 +254,9 @@ input[type=range].range--unset { opacity: .45; }
 .rec--worn { padding: 20px; }
 .rec--worn .h3 { font-size: 28px; }
 .rec__undo { align-self: flex-start; }
+.rec__occasion { display: flex; flex-direction: column; gap: 2px; }
+.rec__occasion .label { margin-bottom: 6px; }
+.rec__occasion .small { margin: 6px 0 0; }
 .recs__label { margin: 8px 0 -4px; }
 
 /* ---------- Miniaturas ---------- */

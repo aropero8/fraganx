@@ -72,11 +72,21 @@ export function warmthOf(perfume) {
 const NIGHT_OCCASIONS = ['noche', 'cita', 'evento'];
 const DAY_OCCASIONS = ['trabajo', 'deporte', 'casual'];
 
+// Ocasiones para las que te lo has puesto (sin contar hoy ni los usos que no acertaron)
+function pastWearOccasions(p) {
+  return (p.wears || []).filter((w) => w.occasion && (w.feedback || 0) >= 0 && w.date !== todayKey()).map((w) => w.occasion);
+}
+
+export function usesFor(p, occasion) {
+  return pastWearOccasions(p).filter((o) => o === occasion).length;
+}
+
 // Cuánto es de noche un perfume: -1 = muy de día … +1 = muy de noche.
-// Si no lo has indicado se deduce (con menos seguridad) de acordes, proyección y ocasiones.
+// Si no lo has indicado se deduce (con menos seguridad) de acordes, proyección y ocasiones
+// (las que marcaste y aquellas para las que te lo has puesto).
 export function nightnessOf(p) {
   if (p.daytime) return { value: (p.daytime - 3) / 2, known: true };
-  const occ = p.occasions || [];
+  const occ = [...(p.occasions || []), ...pastWearOccasions(p)];
   const occBias = occ.length
     ? (occ.filter((o) => NIGHT_OCCASIONS.includes(o)).length - occ.filter((o) => DAY_OCCASIONS.includes(o)).length) / occ.length
     : 0;
@@ -154,8 +164,11 @@ export function scorePerfume(p, ctx) {
 
   // 3. Ocasión
   if (occasion) {
-    if (p.occasions?.includes(occasion)) add(1.2, `Lo usas para ${occasion}`);
-    else if (p.occasions?.length) add(-0.3);
+    const marked = p.occasions?.includes(occasion);
+    const usedFor = usesFor(p, occasion);
+    if (marked) add(1.2, `Lo marcaste para ${occasion}`);
+    if (usedFor) add(Math.min(usedFor, 4) * 0.35, `Te lo has puesto ${usedFor === 1 ? 'una vez' : `${usedFor} veces`} para ${occasion}`);
+    else if (!marked && p.occasions?.length) add(-0.3);
     const intensity = p.intensity || 3;
     if (occasion === 'deporte' && intensity >= 4) add(-1.5, 'Demasiado intenso para hacer deporte');
     if (occasion === 'trabajo' && intensity >= 5) add(-0.8, 'Proyecta mucho para la oficina');

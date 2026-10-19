@@ -118,6 +118,9 @@ export function StoreProvider({ children }) {
       rateWear(id, wearId, feedback) {
         updatePerfume(id, (p) => ({ wears: p.wears.map((w) => (w.id === wearId ? { ...w, feedback } : w)) }));
       },
+      setWearOccasion(id, wearId, occasion) {
+        updatePerfume(id, (p) => ({ wears: p.wears.map((w) => (w.id === wearId ? { ...w, occasion: occasion || null } : w)) }));
+      },
       undoWear(id, wearId) {
         updatePerfume(id, (p) => ({ wears: p.wears.filter((w) => w.id !== wearId) }));
       },
