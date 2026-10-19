@@ -80,6 +80,11 @@ export default function Today({ openPerfume, goCollection }) {
   }, [perfumes]);
 
   const todayWear = (p) => p.wears?.find((w) => w.date === todayKey());
+  // Al volver a abrir la app, la ocasión de hoy sigue elegida
+  const todayOccasion = wornToday && todayWear(wornToday).occasion;
+  useEffect(() => {
+    if (todayOccasion) setOccasion((o) => o ?? todayOccasion);
+  }, [todayOccasion]);
   // Lo que llevas hoy arriba; el resto, debajo
   const others = wornToday ? ranked.filter((r) => r.perfume.id !== wornToday.id) : ranked;
 
@@ -95,6 +100,12 @@ export default function Today({ openPerfume, goCollection }) {
         if (prev) store.logWear(prev.id, { weather, occasion, moment });
       },
     });
+  };
+
+  // La ocasión de hoy se guarda con el uso; las alternativas pasan a ser para esa ocasión
+  const setWearOccasion = (p, o) => {
+    store.setWearOccasion(p.id, todayWear(p).id, o);
+    if (o) chooseOccasion(o);
   };
 
   const unwear = (p) => {
@@ -208,8 +219,10 @@ export default function Today({ openPerfume, goCollection }) {
             <>
               <WornCard
                 perfume={wornToday}
+                wear={todayWear(wornToday)}
                 onOpen={() => openPerfume(wornToday.id)}
                 onUndo={() => unwear(wornToday)}
+                onOccasion={(o) => setWearOccasion(wornToday, o)}
               />
               {others.length > 0 && <p className="label recs__label">Si te apetece cambiar</p>}
             </>
@@ -234,7 +247,7 @@ export default function Today({ openPerfume, goCollection }) {
   );
 }
 
-function WornCard({ perfume: p, onOpen, onUndo }) {
+function WornCard({ perfume: p, wear, onOpen, onUndo, onOccasion }) {
   return (
     <article className="rec rec--hero rec--worn">
       <button className="rec__top" onClick={onOpen}>
@@ -246,6 +259,11 @@ function WornCard({ perfume: p, onOpen, onUndo }) {
           <AccordBar accords={p.accords} />
         </span>
       </button>
+      <div className="rec__occasion">
+        <p className="label">{wear?.occasion ? 'Te lo pones para' : '¿Para qué te lo pones?'}</p>
+        <Chips small options={OCCASION_OPTIONS} value={wear?.occasion ?? null} onChange={onOccasion} multi={false} />
+        {!wear?.occasion && <p className="small muted">Así aprendo para qué sueles usar cada perfume.</p>}
+      </div>
       <button className="link link--muted small rec__undo" onClick={onUndo}>No, hoy no lo llevo</button>
     </article>
   );
