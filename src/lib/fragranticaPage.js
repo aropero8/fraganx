@@ -11,7 +11,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const clean = (s) => (s || '').replace(/\s+/g, ' ').trim();
 const norm = (s) => clean(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
-// En el navegador (desarrollo) Fragrantica no deja leer su web por CORS: pasa por el proxy de Vite
+// En el navegador Fragrantica no deja leer su web por CORS: en desarrollo pasa por el proxy de Vite,
+// pero la web publicada (la que se instala en iPhone) no tiene proxy y solo puede pegar el texto.
+export const canDownloadFragrantica = Capacitor.isNativePlatform() || import.meta.env.DEV;
 const DEV_PROXY = { 'www.fragrantica.es': '/fragrantica-es', 'www.fragrantica.com': '/fragrantica-com' };
 
 export async function fetchFragranticaPage(url) {
@@ -98,7 +100,7 @@ export async function loadFromFragrantica(url) {
 }
 
 export const hasNotes = (p) => Boolean(p.notes?.top || p.notes?.heart || p.notes?.base);
-export const needsFragrantica = (p) => Boolean(p.fragranticaUrl) && (!p.accords?.length || !hasNotes(p));
+export const needsFragrantica = (p) => canDownloadFragrantica && Boolean(p.fragranticaUrl) && (!p.accords?.length || !hasNotes(p));
 
 // Progreso de la tanda en curso ({ done, total, name } o null), para verlo aunque cambies de pantalla
 let batch = null;

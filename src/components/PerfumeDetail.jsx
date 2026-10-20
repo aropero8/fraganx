@@ -6,7 +6,7 @@ import { accordGradient, Chips, Dots, Icon, Stars, useToast } from './ui.jsx';
 import { AccordBars, LONGEVITY_VOTES, NotePyramid, SILLAGE_VOTES, VoteBars } from './FragranceProfile.jsx';
 import FragranticaFill from './FragranticaFill.jsx';
 import { mergeFragrantica } from '../lib/fragrantica.js';
-import { hasNotes as notesOf, loadFromFragrantica, needsFragrantica } from '../lib/fragranticaPage.js';
+import { canDownloadFragrantica, hasNotes as notesOf, loadFromFragrantica, needsFragrantica } from '../lib/fragranticaPage.js';
 
 // three.js pesa: se descarga aparte y mientras tanto se ve la foto
 const Bottle3D = lazy(() => import('./Bottle3D.jsx'));
@@ -110,7 +110,7 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
   const missing = [!p.accords.length && 'acordes', !hasNotes && 'notas'].filter(Boolean);
   // Sin enlace, o si la descarga no ha bastado, queda pegar el texto de la página
   const askPaste = missing.length > 0 && sync.state !== 'loading'
-    && (!p.fragranticaUrl || sync.state === 'error' || Boolean(p.fragranticaFetchedAt));
+    && (!p.fragranticaUrl || !canDownloadFragrantica || sync.state === 'error' || Boolean(p.fragranticaFetchedAt));
   const fillFromFragrantica = (data) => store.savePerfume(mergeFragrantica(p, data));
 
   return (
@@ -222,7 +222,7 @@ export default function PerfumeDetail({ id, focus, onBack, onEdit }) {
         )}
       </section>
 
-      {p.fragranticaUrl && missing.length === 0 && (
+      {canDownloadFragrantica && p.fragranticaUrl && missing.length === 0 && (
         <button className="btn btn--block" disabled={sync.state === 'loading'} onClick={() => download(true)}>
           {sync.state === 'loading' ? 'Descargando…' : 'Actualizar desde Fragrantica'}
         </button>

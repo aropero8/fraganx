@@ -1,7 +1,7 @@
 # FraganX
 
 Tu colección de perfumes con recomendaciones según el tiempo del día, la ocasión y tus propios comentarios.
-React + Vite, empaquetable como app Android con Capacitor.
+React + Vite, empaquetable como app Android con Capacitor y como web instalable en iPhone.
 
 ## Arrancar en el navegador
 
@@ -31,6 +31,19 @@ npm run android:open       # abre Android Studio → Run
 ```
 
 Si no das permiso, puedes buscar tu ciudad a mano en la pantalla Hoy.
+
+## Usarla en iPhone (web instalable)
+
+Cada cambio en `main` se publica solo en **https://aropero8.github.io/fraganx/**
+(`.github/workflows/pages.yml`; en GitHub, Settings → Pages → Source: GitHub Actions).
+
+En el iPhone: abre ese enlace en **Safari** → botón **Compartir** → **Añadir a pantalla de inicio**.
+Queda con su icono, a pantalla completa y se abre sin conexión (el tiempo sí la necesita).
+
+- Los datos se guardan solo en ese iPhone. Para pasarlos a otro móvil: **Ajustes → Copia de seguridad**.
+- La web no puede descargar la ficha de Fragrantica con el enlace (Fragrantica lo bloquea desde
+  otras webs): se completa pegando el texto de la página, como indica la propia ficha.
+- Las versiones nuevas se instalan solas: la app se recarga la próxima vez que la dejes en segundo plano.
 
 ## Cómo decide qué recomendarte
 

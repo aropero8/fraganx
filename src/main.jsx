@@ -4,6 +4,7 @@ import '@fontsource-variable/fraunces';
 import { StoreProvider } from './lib/store.jsx';
 import { ToastProvider } from './components/ui.jsx';
 import App from './App.jsx';
+import { setupPwa } from './lib/pwa.js';
 import './styles.css';
 
 createRoot(document.getElementById('root')).render(
@@ -15,3 +16,5 @@ createRoot(document.getElementById('root')).render(
     </StoreProvider>
   </StrictMode>,
 );
+
+setupPwa();
