@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { parseFragrantica, parseFragranticaUrl } from '../lib/fragrantica.js';
-import { loadFromFragrantica } from '../lib/fragranticaPage.js';
+import { canDownloadFragrantica, loadFromFragrantica } from '../lib/fragranticaPage.js';
 import { useToast } from './ui.jsx';
 
 const FIELD_LABELS = {
@@ -20,7 +20,9 @@ export default function FragranticaFill({ onFill, url, open: startOpen = false, 
     const link = parseFragranticaUrl(text);
     const onlyLink = link && text.trim().length <= link.url.length + 12;
     let data;
-    if (onlyLink) {
+    if (onlyLink && !canDownloadFragrantica) {
+      data = { fragranticaUrl: link.url, name: link.name, brand: link.brand };
+    } else if (onlyLink) {
       setLoading(true);
       try {
         data = { fragranticaUrl: link.url, name: link.name, brand: link.brand, ...(await loadFromFragrantica(link.url)) };
@@ -51,8 +53,9 @@ export default function FragranticaFill({ onFill, url, open: startOpen = false, 
       <h3>{title}</h3>
       {children}
       <p className="muted small">
-        Pega el enlace del perfume y descargo su ficha. Para tener también las votaciones (estaciones,
-        longevidad y estela), abre la página{url && <> (<a className="link" href={url} target="_blank" rel="noreferrer">abrir ↗</a>)</>},
+        {canDownloadFragrantica
+          ? 'Pega el enlace del perfume y descargo su ficha. Para tener también las votaciones (estaciones, longevidad y estela), abre'
+          : 'Abre'} la página{url && <> (<a className="link" href={url} target="_blank" rel="noreferrer">abrir ↗</a>)</>},
         baja hasta el final, selecciona todo, copia y pégalo aquí.
       </p>
       <textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} autoFocus={!startOpen}

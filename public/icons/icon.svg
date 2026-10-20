@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108">
+  <!-- Icono FraganX: el mismo que el de Android (android/app/src/main/res/drawable-v24) -->
+  <defs>
+    <radialGradient id="bg" gradientUnits="userSpaceOnUse" cx="54" cy="40" r="78">
+      <stop offset="0" stop-color="#3A2A1D" /><stop offset=".5" stop-color="#1E1712" /><stop offset="1" stop-color="#120E0C" />
+    </radialGradient>
+    <linearGradient id="neck" gradientUnits="userSpaceOnUse" x1="48.94" y1="41.12" x2="59.06" y2="41.12">
+      <stop offset="0" stop-color="#B98242" /><stop offset=".5" stop-color="#7E4818" /><stop offset="1" stop-color="#B98242" />
+    </linearGradient>
+    <linearGradient id="cap" gradientUnits="userSpaceOnUse" x1="45.26" y1="29.16" x2="62.74" y2="41.12">
+      <stop offset="0" stop-color="#FBE3B4" /><stop offset=".55" stop-color="#E2B46C" /><stop offset="1" stop-color="#9C5D24" />
+    </linearGradient>
+    <linearGradient id="body" gradientUnits="userSpaceOnUse" x1="36.52" y1="45.72" x2="71.48" y2="78.84">
+      <stop offset="0" stop-color="#FBE3B4" /><stop offset=".5" stop-color="#E2B46C" /><stop offset="1" stop-color="#9C5D24" />
+    </linearGradient>
+    <linearGradient id="inner" gradientUnits="userSpaceOnUse" x1="42.04" y1="51.24" x2="65.96" y2="73.32">
+      <stop offset="0" stop-color="#A9692D" /><stop offset=".5" stop-color="#D9A75F" /><stop offset="1" stop-color="#F7D9A0" />
+    </linearGradient>
+  </defs>
+  <rect width="108" height="108" fill="url(#bg)" />
+  <rect x="48.94" y="41.12" width="10.12" height="5.06" rx=".92" fill="url(#neck)" />
+  <rect x="45.26" y="29.16" width="17.48" height="11.96" rx="2.76" fill="url(#cap)" />
+  <rect x="48.02" y="31.46" width="1.84" height="7.36" rx=".92" fill="#fff" fill-opacity=".45" />
+  <rect x="36.52" y="45.72" width="34.96" height="33.12" rx="7.36" fill="url(#body)" />
+  <rect x="42.04" y="51.24" width="23.92" height="22.08" rx="3.68" fill="url(#inner)" />
+  <rect x="44.8" y="54" width="2.21" height="10.12" rx="1.1" fill="#fff" fill-opacity=".55" />
+  <path fill="#F6DCA8" d="M70.56,27.32Q71.55,31.85 76.08,32.84Q71.55,33.83 70.56,38.36Q69.57,33.83 65.04,32.84Q69.57,31.85 70.56,27.32Z" />
+  <path fill="#F6DCA8" fill-opacity=".75" d="M34.22,37.9Q34.72,40.16 36.98,40.66Q34.72,41.16 34.22,43.42Q33.72,41.16 31.46,40.66Q33.72,40.16 34.22,37.9Z" />
+</svg>

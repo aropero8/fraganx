@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useStore } from '../lib/store.jsx';
 import { SAMPLES } from '../lib/samples.js';
 import { mergeFragrantica, parseFragranticaUrlList } from '../lib/fragrantica.js';
-import { completeFromFragrantica, needsFragrantica, subscribeBatch } from '../lib/fragranticaPage.js';
+import { canDownloadFragrantica, completeFromFragrantica, needsFragrantica, subscribeBatch } from '../lib/fragranticaPage.js';
 import { useToast } from './ui.jsx';
 
 // CSV mínimo: nombre;marca;estado;acordes(separados por coma);valoración
@@ -82,8 +82,10 @@ export default function Settings() {
       const links = parseFragranticaUrlList(text);
       if (links.length) {
         store.mergePerfumes(links);
-        toast(`Añadidos ${links.length} perfumes. Descargo sus fichas de Fragrantica…`);
-        setAutoComplete(true);
+        if (canDownloadFragrantica) {
+          toast(`Añadidos ${links.length} perfumes. Descargo sus fichas de Fragrantica…`);
+          setAutoComplete(true);
+        } else toast(`Añadidos ${links.length} perfumes. Completa cada uno pegando el texto de su página en su ficha.`);
         setCsv('');
         return;
       }
