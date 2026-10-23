@@ -124,7 +124,11 @@ bloquea las peticiones; entonces queda pegar el texto. Entiende la web en españ
   **Actualizar desde Fragrantica** para volver a descargarla.
 - **Muchos a la vez**: en **Ajustes → Importar** pega enlaces de Fragrantica, uno por línea
   (`enlace;quiero` o `enlace;tuve` si no lo tienes). Se crean y se completan solos; si alguno queda pendiente,
-  **Ajustes → Completar desde Fragrantica** lo reintenta.
+  **Ajustes → Completar desde Fragrantica** lo reintenta. Los que ya tienes (mismo enlace o mismo nombre y marca) no se repiten.
+- **Tu armario entero**: Fragrantica no lo exporta y la lista llega cifrada, así que **Ajustes → Traer tu armario
+  de Fragrantica** copia un marcador (`src/lib/fragranticaWardrobe.js`). Abierto en tu perfil
+  (`fragrantica.es/@usuario`), abre la pestaña Armario y saca los enlaces de Tengo, Quiero, Tuve y Para probar
+  (este entra como quiero) en el formato de Importar.
 - **Votaciones y perfumes sin enlace**: pega el texto de la página (`src/lib/fragrantica.js`): abre la ficha
   en Fragrantica, baja hasta el final (para que cargue la longevidad y la estela), selecciona todo, copia y
   pégalo en **Rellenar desde Fragrantica** (Nuevo/Editar) o **Añadir longevidad y estela** (en la ficha).

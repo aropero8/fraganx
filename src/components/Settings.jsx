@@ -3,6 +3,7 @@ import { useStore } from '../lib/store.jsx';
 import { SAMPLES } from '../lib/samples.js';
 import { mergeFragrantica, parseFragranticaUrlList } from '../lib/fragrantica.js';
 import { canDownloadFragrantica, completeFromFragrantica, needsFragrantica, subscribeBatch } from '../lib/fragranticaPage.js';
+import { WARDROBE_BOOKMARKLET } from '../lib/fragranticaWardrobe.js';
 import { useToast } from './ui.jsx';
 
 // CSV mínimo: nombre;marca;estado;acordes(separados por coma);valoración
@@ -24,6 +25,10 @@ function parseCsv(text) {
       rating: parseFloat(rating) || 0,
     }));
 }
+
+// Para no importar dos veces el mismo perfume: el número del enlace de Fragrantica, o nombre y marca
+const fragranticaId = (url) => /-(\d+)\.html/.exec(url || '')?.[1];
+const sameKey = (p) => p.name && `${p.name}|${p.brand || ''}`.normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9|]/gi, '').toLowerCase();
 
 export default function Settings() {
   const store = useStore();
@@ -79,14 +84,20 @@ export default function Settings() {
         toast('Copia restaurada.');
       }
     } catch {
-      const links = parseFragranticaUrlList(text);
-      if (links.length) {
+      const all = parseFragranticaUrlList(text);
+      if (all.length) {
+        // Los que ya tienes (mismo enlace, o mismo nombre y marca) no se repiten
+        const known = new Set(store.perfumes.flatMap((p) => [fragranticaId(p.fragranticaUrl), sameKey(p)]).filter(Boolean));
+        const links = all.filter((p) => !known.has(fragranticaId(p.fragranticaUrl)) && !known.has(sameKey(p)));
+        const skipped = all.length - links.length;
+        const already = skipped ? ` (${skipped} ya estaban)` : '';
+        setCsv('');
+        if (!links.length) return toast(`Ya tenías los ${all.length} perfumes.`);
         store.mergePerfumes(links);
         if (canDownloadFragrantica) {
-          toast(`Añadidos ${links.length} perfumes. Descargo sus fichas de Fragrantica…`);
+          toast(`Añadidos ${links.length} perfumes${already}. Descargo sus fichas de Fragrantica…`);
           setAutoComplete(true);
-        } else toast(`Añadidos ${links.length} perfumes. Completa cada uno pegando el texto de su página en su ficha.`);
-        setCsv('');
+        } else toast(`Añadidos ${links.length} perfumes${already}. Completa cada uno pegando el texto de su página en su ficha.`);
         return;
       }
       const rows = parseCsv(text);
@@ -123,6 +134,24 @@ export default function Settings() {
             }} />
           </label>
         </div>
+      </section>
+
+      <section className="card">
+        <h3>Traer tu armario de Fragrantica</h3>
+        <p className="muted small">
+          Fragrantica no deja exportarlo, pero un marcador lo copia desde tu perfil (Tengo, Quiero, Tuve y Para probar,
+          que entra como quiero):
+        </p>
+        <ol className="muted small">
+          <li>Pulsa <b>Copiar marcador</b>.</li>
+          <li>En Safari guarda cualquier página en Marcadores. Luego edita ese marcador y cambia su dirección por lo copiado.</li>
+          <li>Abre tu perfil de Fragrantica (<code>fragrantica.es/@tu-usuario</code>) y abre el marcador.</li>
+          <li>Pulsa <b>Copiar</b> y pégalo arriba, en <b>Importar</b>. Los que ya tengas no se repiten.</li>
+        </ol>
+        <button className="btn btn--block" onClick={async () => {
+          try { await navigator.clipboard.writeText(WARDROBE_BOOKMARKLET); toast('Marcador copiado.'); }
+          catch { toast('No he podido copiarlo.'); }
+        }}>Copiar marcador</button>
       </section>
 
       {(pending.length > 0 || progress) && (
