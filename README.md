@@ -125,10 +125,14 @@ bloquea las peticiones; entonces queda pegar el texto. Entiende la web en españ
 - **Muchos a la vez**: en **Ajustes → Importar** pega enlaces de Fragrantica, uno por línea
   (`enlace;quiero` o `enlace;tuve` si no lo tienes). Se crean y se completan solos; si alguno queda pendiente,
   **Ajustes → Completar desde Fragrantica** lo reintenta. Los que ya tienes (mismo enlace o mismo nombre y marca) no se repiten.
-- **Tu armario entero**: Fragrantica no lo exporta y la lista llega cifrada, así que **Ajustes → Traer tu armario
-  de Fragrantica** copia un marcador (`src/lib/fragranticaWardrobe.js`). Abierto en tu perfil
-  (`fragrantica.es/@usuario`), abre la pestaña Armario y saca los enlaces de Tengo, Quiero, Tuve y Para probar
-  (este entra como quiero) en el formato de Importar.
+- **Tu armario entero**: Fragrantica no lo exporta y la lista llega cifrada, así que se lee de la página de tu
+  perfil (`fragrantica.es/@usuario`): pestaña Armario, secciones Tengo, Quiero, Tuve y Para probar (este entra
+  como quiero). El script está en `src/lib/fragranticaWardrobe.js`; baja por cada sección porque Fragrantica
+  pinta los perfumes por tandas (48 en móvil, 96 en ordenador).
+  - En Android, **Ajustes → Traer tu armario de Fragrantica** pide tu usuario, abre el perfil en una ventana de
+    la app (`FragranticaWardrobePlugin.java`), importa los perfumes con su nombre y marca bien escritos y
+    descarga sus fichas.
+  - En el navegador (iPhone) copia un marcador que, abierto en tu perfil, deja los enlaces listos para Importar.
 - **Votaciones y perfumes sin enlace**: pega el texto de la página (`src/lib/fragrantica.js`): abre la ficha
   en Fragrantica, baja hasta el final (para que cargue la longevidad y la estela), selecciona todo, copia y
   pégalo en **Rellenar desde Fragrantica** (Nuevo/Editar) o **Añadir longevidad y estela** (en la ficha).

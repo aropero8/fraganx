@@ -3,7 +3,7 @@ import { useStore } from '../lib/store.jsx';
 import { SAMPLES } from '../lib/samples.js';
 import { mergeFragrantica, parseFragranticaUrlList } from '../lib/fragrantica.js';
 import { canDownloadFragrantica, completeFromFragrantica, needsFragrantica, subscribeBatch } from '../lib/fragranticaPage.js';
-import { WARDROBE_BOOKMARKLET } from '../lib/fragranticaWardrobe.js';
+import { WARDROBE_BOOKMARKLET, canReadWardrobe, profileUrl, readWardrobe } from '../lib/fragranticaWardrobe.js';
 import { useToast } from './ui.jsx';
 
 // CSV mínimo: nombre;marca;estado;acordes(separados por coma);valoración
@@ -36,6 +36,8 @@ export default function Settings() {
   const [csv, setCsv] = useState('');
   const [progress, setProgress] = useState(null); // { done, total, name } mientras se completan
   const [autoComplete, setAutoComplete] = useState(false);
+  const [profile, setProfile] = useState(() => { try { return localStorage.getItem('fragranticaProfile') || ''; } catch { return ''; } });
+  const [readingWardrobe, setReadingWardrobe] = useState(false);
 
   const pending = store.perfumes.filter(needsFragrantica);
   useEffect(() => subscribeBatch(setProgress), []);
@@ -75,6 +77,34 @@ export default function Settings() {
     a.click();
   };
 
+  // Perfumes con enlace de Fragrantica: los que ya tienes (mismo enlace, o mismo nombre y marca) no se repiten
+  const importLinks = (all) => {
+    const known = new Set(store.perfumes.flatMap((p) => [fragranticaId(p.fragranticaUrl), sameKey(p)]).filter(Boolean));
+    const links = all.filter((p) => !known.has(fragranticaId(p.fragranticaUrl)) && !known.has(sameKey(p)));
+    const skipped = all.length - links.length;
+    const already = skipped ? ` (${skipped} ya estaban)` : '';
+    if (!links.length) return toast(`Ya tenías los ${all.length} perfumes.`);
+    store.mergePerfumes(links);
+    if (canDownloadFragrantica) {
+      toast(`Añadidos ${links.length} perfumes${already}. Descargo sus fichas de Fragrantica…`);
+      setAutoComplete(true);
+    } else toast(`Añadidos ${links.length} perfumes${already}. Completa cada uno pegando el texto de su página en su ficha.`);
+  };
+
+  const importWardrobe = async () => {
+    const url = profileUrl(profile);
+    if (!url) return toast('Escribe tu usuario de Fragrantica o el enlace de tu perfil.');
+    try { localStorage.setItem('fragranticaProfile', profile.trim()); } catch { /* no pasa nada */ }
+    setReadingWardrobe(true);
+    try {
+      importLinks(await readWardrobe(url));
+    } catch (e) {
+      if (e.message !== 'Cancelado') toast(e.message || 'No he podido leer tu armario.');
+    } finally {
+      setReadingWardrobe(false);
+    }
+  };
+
   const importText = (text) => {
     try {
       const data = JSON.parse(text);
@@ -84,20 +114,10 @@ export default function Settings() {
         toast('Copia restaurada.');
       }
     } catch {
-      const all = parseFragranticaUrlList(text);
-      if (all.length) {
-        // Los que ya tienes (mismo enlace, o mismo nombre y marca) no se repiten
-        const known = new Set(store.perfumes.flatMap((p) => [fragranticaId(p.fragranticaUrl), sameKey(p)]).filter(Boolean));
-        const links = all.filter((p) => !known.has(fragranticaId(p.fragranticaUrl)) && !known.has(sameKey(p)));
-        const skipped = all.length - links.length;
-        const already = skipped ? ` (${skipped} ya estaban)` : '';
+      const links = parseFragranticaUrlList(text);
+      if (links.length) {
         setCsv('');
-        if (!links.length) return toast(`Ya tenías los ${all.length} perfumes.`);
-        store.mergePerfumes(links);
-        if (canDownloadFragrantica) {
-          toast(`Añadidos ${links.length} perfumes${already}. Descargo sus fichas de Fragrantica…`);
-          setAutoComplete(true);
-        } else toast(`Añadidos ${links.length} perfumes${already}. Completa cada uno pegando el texto de su página en su ficha.`);
+        importLinks(links);
         return;
       }
       const rows = parseCsv(text);
@@ -138,6 +158,19 @@ export default function Settings() {
 
       <section className="card">
         <h3>Traer tu armario de Fragrantica</h3>
+        {canReadWardrobe ? (
+          <>
+            <p className="muted small">
+              Abro tu perfil y añado lo que tengas en Tengo, Quiero, Tuve y Para probar (este entra como quiero).
+              Los que ya tengas no se repiten.
+            </p>
+            <input value={profile} onChange={(e) => setProfile(e.target.value)} placeholder="Tu usuario (erizopanzon) o el enlace de tu perfil"
+              autoCapitalize="off" autoCorrect="off" spellCheck={false} onKeyDown={(e) => e.key === 'Enter' && importWardrobe()} />
+            <button className="btn btn--primary btn--block" disabled={readingWardrobe || !profile.trim()} onClick={importWardrobe}>
+              {readingWardrobe ? 'Leyendo tu armario…' : 'Traer mi armario'}
+            </button>
+          </>
+        ) : (<>
         <p className="muted small">
           Fragrantica no deja exportarlo, pero un marcador lo copia desde tu perfil (Tengo, Quiero, Tuve y Para probar,
           que entra como quiero):
@@ -152,6 +185,7 @@ export default function Settings() {
           try { await navigator.clipboard.writeText(WARDROBE_BOOKMARKLET); toast('Marcador copiado.'); }
           catch { toast('No he podido copiarlo.'); }
         }}>Copiar marcador</button>
+        </>)}
       </section>
 
       {(pending.length > 0 || progress) && (
