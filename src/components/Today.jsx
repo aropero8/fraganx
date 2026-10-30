@@ -4,6 +4,7 @@ import { fetchWeather, getCurrentCoords, searchCity } from '../lib/weather.js';
 import { recommend, todayKey, daysSince, defaultMoment } from '../lib/recommend.js';
 import { cap, CONDITION_EMOJI, MOMENTS, OCCASION_EMOJI, OCCASIONS, SEASON_EMOJI } from '../lib/constants.js';
 import { AccordBar, Chips, Icon, Thumb, useToast } from './ui.jsx';
+import WearCalendar from './WearCalendar.jsx';
 
 const OCCASION_OPTIONS = OCCASIONS.map((o) => ({ value: o, label: `${OCCASION_EMOJI[o]} ${cap(o)}` }));
 
@@ -243,6 +244,8 @@ export default function Today({ openPerfume, goCollection }) {
           )}
         </section>
       )}
+
+      {perfumes.some((p) => p.wears?.length) && <WearCalendar perfumes={perfumes} openPerfume={openPerfume} />}
     </div>
   );
 }
