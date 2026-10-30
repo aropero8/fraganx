@@ -130,6 +130,8 @@ export default function Today({ openPerfume, goCollection }) {
         <h1>¿Qué te pones hoy?</h1>
       </header>
 
+      {perfumes.some((p) => p.wears?.length) && <WearCalendar perfumes={perfumes} openPerfume={openPerfume} />}
+
       {!location ? (
         <section className="card">
           <h3>¿Dónde estás?</h3>
@@ -244,8 +246,6 @@ export default function Today({ openPerfume, goCollection }) {
           )}
         </section>
       )}
-
-      {perfumes.some((p) => p.wears?.length) && <WearCalendar perfumes={perfumes} openPerfume={openPerfume} />}
     </div>
   );
 }
