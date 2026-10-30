@@ -268,19 +268,18 @@ input[type=range].range--unset { opacity: .45; }
 .recs__label { margin: 8px 0 -4px; }
 
 /* ---------- Calendario de usos ---------- */
-.wcal { gap: 14px; }
-.wcal:not([open]) { gap: 0; }
-.wcal__summary { display: flex; align-items: center; gap: 12px; list-style: none; cursor: pointer; }
-.wcal__summary::-webkit-details-marker { display: none; }
-.wcal__summary .grow { display: flex; flex-direction: column; gap: 2px; }
-.wcal__chevron { color: var(--muted); transform: rotate(-90deg); transition: transform .2s; }
-.wcal[open] .wcal__chevron { transform: rotate(90deg); }
-.wcal__nav { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.wcal__nav strong { font-family: var(--serif); font-weight: 600; font-size: 17px; }
-.wcal__nav .icon-btn { width: 34px; height: 34px; }
+.wcal { display: flex; flex-direction: column; gap: 8px; margin-top: -6px; }
+.wcal--open { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; box-shadow: var(--shadow); }
+.wcal__nav { display: flex; align-items: center; gap: 8px; min-height: 30px; }
+.wcal__nav .label { margin: 0; }
+.wcal--open .wcal__nav .label { text-align: center; color: var(--text); font-family: var(--serif); font-weight: 600; font-size: 16px; }
+.wcal__nav .icon-btn { width: 30px; height: 30px; }
 .wcal__nav .icon-btn:disabled { opacity: .35; cursor: default; }
 .wcal__next .icon { transform: rotate(180deg); }
-.wcal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.wcal__toggle { display: inline-flex; align-items: center; gap: 2px; font-weight: 600; }
+.wcal__chevron { transform: rotate(-90deg); transition: transform .2s; }
+.wcal--open .wcal__chevron { transform: rotate(90deg); }
+.wcal__grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; }
 .wcal__wd { text-align: center; font-size: 11px; font-weight: 600; color: var(--muted); padding-bottom: 2px; }
 .wcal__day {
   position: relative; aspect-ratio: 1; border: 1px solid transparent; border-radius: 10px; padding: 0;

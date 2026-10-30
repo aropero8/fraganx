@@ -4,21 +4,26 @@ import { cap, MOMENTS, OCCASION_EMOJI } from '../lib/constants.js';
 import { Icon, Thumb } from './ui.jsx';
 
 const WEEKDAYS = ['L', 'M', 'X', 'J', 'V', 'S', 'D'];
+const mondayOffset = (d) => (d.getDay() + 6) % 7;
 
 // Días del mes en una rejilla que empieza en lunes; null para los huecos
 function monthDays(year, month) {
-  const first = new Date(year, month, 1);
   const total = new Date(year, month + 1, 0).getDate();
-  const offset = (first.getDay() + 6) % 7;
   return [
-    ...Array(offset).fill(null),
+    ...Array(mondayOffset(new Date(year, month, 1))).fill(null),
     ...Array.from({ length: total }, (_, i) => todayKey(new Date(year, month, i + 1))),
   ];
 }
 
-// Calendario desplegable con lo que te has puesto cada día
+function weekDays(d = new Date()) {
+  const monday = new Date(d.getFullYear(), d.getMonth(), d.getDate() - mondayOffset(d));
+  return Array.from({ length: 7 }, (_, i) => todayKey(new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)));
+}
+
+// La semana con lo que te has puesto cada día; se despliega para ver el mes entero
 export default function WearCalendar({ perfumes, openPerfume }) {
   const now = new Date();
+  const [open, setOpen] = useState(false);
   const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() });
   const [selected, setSelected] = useState(null);
 
@@ -29,11 +34,19 @@ export default function WearCalendar({ perfumes, openPerfume }) {
     return map;
   }, [perfumes]);
 
-  const days = monthDays(cursor.year, cursor.month);
-  const monthPrefix = todayKey(new Date(cursor.year, cursor.month, 1)).slice(0, 7);
-  const wornThisMonth = Object.keys(byDay).filter((d) => d.startsWith(monthPrefix)).length;
+  const today = todayKey();
   const isCurrentMonth = cursor.year === now.getFullYear() && cursor.month === now.getMonth();
-  const title = cap(new Date(cursor.year, cursor.month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }));
+  const days = open ? monthDays(cursor.year, cursor.month) : weekDays(now);
+  const title = open
+    ? cap(new Date(cursor.year, cursor.month, 1).toLocaleDateString('es-ES', { month: 'long', year: 'numeric' }))
+    : 'Esta semana';
+
+  const toggle = () => {
+    setOpen(!open);
+    setCursor({ year: now.getFullYear(), month: now.getMonth() });
+    // Lo elegido fuera de la semana no se ve al plegar
+    if (open && selected && !weekDays(now).includes(selected)) setSelected(null);
+  };
 
   const move = (delta) => {
     const d = new Date(cursor.year, cursor.month + delta, 1);
@@ -41,26 +54,20 @@ export default function WearCalendar({ perfumes, openPerfume }) {
     setSelected(null);
   };
 
-  const today = todayKey();
   const picked = selected && byDay[selected];
 
   return (
-    <details className="card wcal">
-      <summary className="wcal__summary">
-        <span className="grow">
-          <span className="h3">Lo que me he puesto</span>
-          <span className="small muted wcal__hint">
-            {wornThisMonth ? `${wornThisMonth} ${wornThisMonth === 1 ? 'día' : 'días'} este mes` : 'Tu calendario de perfumes'}
-          </span>
-        </span>
-        <span className="wcal__chevron"><Icon name="back" size={18} /></span>
-      </summary>
-
+    <section className={`wcal ${open ? 'wcal--open' : ''}`}>
       <div className="wcal__nav">
-        <button className="icon-btn" onClick={() => move(-1)} aria-label="Mes anterior"><Icon name="back" size={18} /></button>
-        <strong>{title}</strong>
-        <button className="icon-btn wcal__next" onClick={() => move(1)} disabled={isCurrentMonth} aria-label="Mes siguiente">
-          <Icon name="back" size={18} />
+        {open && <button className="icon-btn" onClick={() => move(-1)} aria-label="Mes anterior"><Icon name="back" size={16} /></button>}
+        <p className="label grow">{title}</p>
+        {open && (
+          <button className="icon-btn wcal__next" onClick={() => move(1)} disabled={isCurrentMonth} aria-label="Mes siguiente">
+            <Icon name="back" size={16} />
+          </button>
+        )}
+        <button className="link small wcal__toggle" onClick={toggle} aria-expanded={open}>
+          {open ? 'Ver semana' : 'Ver mes'} <span className="wcal__chevron"><Icon name="back" size={14} /></span>
         </button>
       </div>
 
@@ -111,6 +118,6 @@ export default function WearCalendar({ perfumes, openPerfume }) {
           )) : <p className="small muted">Ese día no apuntaste ningún perfume.</p>}
         </div>
       )}
-    </details>
+    </section>
   );
 }
